@@ -1,4 +1,3 @@
--- CREATE TYPE estado_cita as ENUM ('cancelada','confirmada','concluida','programada');
 CREATE TABLE paciente(
 	id_paciente INT AUTO_INCREMENT PRIMARY KEY,
 	nombre VARCHAR(20) NOT NULL,
