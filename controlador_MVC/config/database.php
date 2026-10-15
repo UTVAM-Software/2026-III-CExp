@@ -9,16 +9,20 @@ class Database {
     public function getConnection() {
         $this->conn = null;
 
-        // Crear la conexión usando la clase mysqli
-        $this->conn = new mysqli($this->host, $this->username, $this->password, $this->db_name);
-
-        // Verificar si hubo un error de conexión
-        if ($this->conn->connect_error) {
-            die("Error de conexión a la base de datos: " . $this->conn->connect_error);
+        try {
+            $this->conn = new PDO(
+                "mysql:host=" . $this->host . ";dbname=" . $this->db_name . ";charset=utf8mb4",
+                $this->username,
+                $this->password,
+                [
+                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES   => false
+                ]
+            );
+        } catch (PDOException $exception) {
+            die("Error de conexión a la base de datos: " . $exception->getMessage());
         }
-
-        // Forzar el uso de UTF-8 para que los acentos y las 'ñ' de pacientes/médicos se vean bien
-        $this->conn->set_charset("utf8");
 
         return $this->conn;
     }

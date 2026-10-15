@@ -20,13 +20,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($datos_usuario['estado'] == 'activo') {
             // Login exitoso
             $_SESSION['id_usuario'] = $datos_usuario['id_usuario'];
-            $_SESSION['username'] = $datos_usuario['username'];
-            header("Location: ../views/dashboard.php");
+            $_SESSION['username']   = $datos_usuario['username'];
+            header("Location: ../views/citas.php");
+            exit();
         } else {
-            echo "Tu cuenta está inactiva.";
+            header("Location: ../views/login.php?error=cuenta_inactiva");
+            exit();
         }
     } else {
-        echo "Usuario o contraseña incorrectos.";
+        header("Location: ../views/login.php?error=credenciales_incorrectas");
+        exit();
     }
 }
 ?>
