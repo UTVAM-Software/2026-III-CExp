@@ -1,3 +1,24 @@
+
+<?php
+session_start();
+
+// Si ya inició sesión, enviarlo directo al panel de citas
+if (isset($_SESSION['id_usuario'])) {
+    header("Location: citas.php");
+    exit();
+}
+
+// Capturar posibles mensajes de error enviados por el loginController
+$error = "";
+if (isset($_GET['error'])) {
+    if ($_GET['error'] === 'cuenta_inactiva') {
+        $error = "Tu cuenta se encuentra inactiva. Contacta al administrador.";
+    } elseif ($_GET['error'] === 'credenciales_incorrectas') {
+        $error = "Usuario o contraseña incorrectos.";
+    }
+}
+?>.
+
 <!DOCTYPE html>
 <html lang="es">
 <head>

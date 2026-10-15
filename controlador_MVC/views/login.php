@@ -30,6 +30,7 @@ if (isset($_GET['error'])) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Estilos de Login -->
     <link rel="stylesheet" href="Estilos/Login_y_Registro.css">
+
 </head>
 
 <body class="d-flex justify-content-center align-items-center vh-100 login-bg">
@@ -45,7 +46,7 @@ if (isset($_GET['error'])) {
         <!-- PESTAÑAS -->
         <nav class="custom-tabs mb-4">
             <a href="login.php" class="tab-btn active">Iniciar Sesión</a>
-            <a href="registro.html" class="tab-btn">Registrarse</a>
+            <a href="registro.php" class="tab-btn">Registrarse</a>
         </nav>
 
         <!-- ALERTA DE ERROR -->
