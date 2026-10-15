@@ -1,18 +1,18 @@
 <?php
 class usuario {
-    private $conn;
+    private $conexion;
     private $table_name = "usuario";
 
     public function __construct($db) {
-        $this->conn = $db;
+        $this->conexion = $db;
     }
 
-    // Método para buscar un usuario por su username (Para el Login)
+    // Método para buscar un usuario por su username
     public function getUsuarioByUsername($username) {
         // Uso de consultas preparadas (evita Inyección SQL)
         $query = "SELECT id_usuario, username, contrasena, estado FROM " . $this->table_name . " WHERE username = :username LIMIT 1";
         
-        $stmt = $this->conn->prepare($query);
+        $stmt = $this->conexion->prepare($query);
         
         // Limpiar y vincular el parámetro
         $username = htmlspecialchars(strip_tags($username));
