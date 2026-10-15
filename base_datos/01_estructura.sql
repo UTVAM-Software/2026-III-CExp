@@ -1,3 +1,5 @@
+CREATE DATABASE IF NOT EXISTS cexp_database;
+USE cexp_database;
 CREATE TABLE grupo(
 	id_grupo INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(15) UNIQUE NOT NULL
