@@ -25,13 +25,13 @@ INSERT INTO antecedentes (id_paciente, notas) VALUES
 INSERT INTO grupo (id_grupo, nombre) VALUES 
 (1, 'Administrador'),
 (2, 'Medico'),
-(3, 'Paciente');
+(3, 'Recepcionista');
 -- 6. Insertar Permisos del sistema
 INSERT INTO permiso (id_permiso, nombre, codename) VALUES 
 (1, 'Crear Pacientes', 'add_patient'), -- Altas
-(2, 'Editar Pacientes', 'change_patient'), -- Bajas
-(3, 'Generar Consultas', 'add_consultation'), -- Consultas
-(4, 'Emitir Recetas', 'add_prescription'); -- Cambios 
+(2, 'Editar Pacientes', 'change_patient'), -- Cambios
+(3, 'Eliminar Pacientes', 'delete_patient'), -- Bajas
+(4, 'Ver panel de control', 'consult_panel'); -- Consultas 
 -- 7. Asignar el usuario al Grupo 'Medico' (Tabla 'contiene')
 INSERT INTO contiene (id_usuario, id_grupo) VALUES 
 (1, 2); -- El usuario 1 pertenece al grupo 2 (Medico)
@@ -39,8 +39,8 @@ INSERT INTO contiene (id_usuario, id_grupo) VALUES
 INSERT INTO tiene (id_usuario, id_permiso) VALUES 
 (1, 1), -- Puede crear pacientes 
 (1, 2), -- Puede editar pacientes
-(1, 3), -- Puede generar consultas
-(1, 4); -- Puede emitir recetas
+(1, 3), -- Puede eliminar pacientes
+(1, 4); -- Puede ver el panel de control
 -- 9. Insertar Citas en la agenda virtual con diferentes estados
 INSERT INTO cita (id_paciente, fecha, estado) VALUES 
 (1, '2026-10-10 09:30:00', 'concluida'),
