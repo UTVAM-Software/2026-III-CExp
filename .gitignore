@@ -1,1 +1,3 @@
 config/env.php
+config/auth_admin.php
+config/database.php
