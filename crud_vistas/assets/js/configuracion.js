@@ -88,4 +88,3 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('btnConfirmarEliminarUsuario').href = `../controllers/usuarioController.php?accion=eliminar&id=${idUsuario}`;
     });
 });
-
