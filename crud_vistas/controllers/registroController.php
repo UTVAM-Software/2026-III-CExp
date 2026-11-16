@@ -31,7 +31,7 @@ session_start();
     try {
         $usuarioModel->crearUsuario($nombre_completo, $username, $contrasena_hash, $email, $estado);
     } catch (mysqli_sql_exception $e){
-        if ($e->get_Code() === 1062){
+        if ($e->getCode() === 1062){
             header("Location: ../views/registro.php?error=usuario_existente");
         } else {
             header("Location: ../views/registro.php?error=servidor");

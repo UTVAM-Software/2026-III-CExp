@@ -20,21 +20,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (empty($id_usuario)) {
         // No hay id_usuario es es un nuevo usuario 
-        $usuarioModel->crearUsuario($id_usuario, $nombre_completo, $username, $contrasena, $email, $estado);
+        $usuarioModel->crearUsuario($nombre_completo, $username, $contrasena, $email, $estado);
     } else {
         // Si hay id_usuario  es ACTUALIZAR un usuario existente 
         $usuarioModel->actualizarUsuario((int)$id_usuario, $nombre_completo, $username, $contrasena, $email, $estado);
     }
-    if ()
     // header("Location: ../views/admin_panel.php"); //<-- Joshua tienes que crear el admin panel / redirigir la location
     exit();
 }
 
 // Si la petición viene por Metodo GET: Eliminar user
-if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['accion'])) {
-    if ($_GET['accion'] === 'eliminar' && !empty($_GET['id'])) {
+    if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['accion'])) {
+        if ($_GET['accion'] === 'eliminar' && !empty($_GET['id'])) {
         $id_usuario = (int)$_GET['id'];
-        $usuarioModel->eliminarUsuario($id_usuario);
+        $usuarioModel->eliminarUsuarioconId($id_usuario);
     }
 
     // header("Location: ../views/admin_panel.php"); //<-- Joshua tienes que crear el admin panel / redirigir la location

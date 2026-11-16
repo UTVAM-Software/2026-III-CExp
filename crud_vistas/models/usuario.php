@@ -47,8 +47,8 @@ class usuario {
         return $stmt->execute();
     }
 
-    public function eliminarUsuario($id_usuario, $nombre_completo, $username, $contrasena, $email, $estado){
-        if($this->id_usuario != 0){
+    public function eliminarUsuarioconId($id_usuario){
+        if($id_usuario != 0){
         $query = "DELETE FROM " . $this->table_name . " WHERE id_usuario = ?";
 
         $stmt = $this->conn->prepare($query);
@@ -58,12 +58,6 @@ class usuario {
         $stmt->bind_param("i", $id_usuario);
         return $stmt->execute();
 
-        $this->$id_usuario = 0;
-        $this->$nombre_completo = "";
-        $this->$username = "";
-        $this->$contrasena = "";
-        $this->$email = "";
-        $this->$estado = "";
         }
     }
 }
