@@ -1,4 +1,5 @@
 <?php
+require_once '../config/auth_admin.php';
 $titulo_pagina = 'Configuración - Consultorio Médico';
 $pagina_activa = 'configuracion';
 $script_adicional = '../assets/js/configuracion.js';
