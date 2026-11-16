@@ -1,4 +1,6 @@
 <?php
+require_once '../config/auth.php';
+require_once '../controllers/consultaController.php';
 $titulo_pagina = 'Historial Clínico - CEx+';
 $pagina_activa = 'historial';
 
@@ -8,13 +10,27 @@ if (empty($vista)) {
     return;
 }
 
-// VARIABLES TEMPPORRALES CHAVAL , HASTA QUE HAGAS LOS CONTROLADORES
-$pacientes_lista          = $pacientes_lista ?? [];
-$id_paciente_seleccionado = $id_paciente_seleccionado ?? (int)($_GET['id_paciente'] ?? 0);
-$paciente_actual          = $paciente_actual ?? null;
-$antecedentes_paciente    = $antecedentes_paciente ?? [];
-$historial_consultas      = $historial_consultas ?? [];
+$datos_historial          = obtenerDatosHistorial($_GET['id_paciente'] ?? 0);
+$pacientes_lista          = $datos_historial['pacientes_lista'] ?? [];
+$id_paciente_seleccionado = $datos_historial['id_paciente_seleccionado'] ?? 0;
+$paciente_actual          = $datos_historial['paciente_actual'] ?? null;
+$antecedentes_paciente    = $datos_historial['antecedentes_paciente'] ?? [];
+$historial_consultas      = $datos_historial['historial_consultas'] ?? [];
 ?>
+
+<?php if (!empty($_GET['mensaje'])): ?>
+    <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($_GET['mensaje']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($_GET['error'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($_GET['error']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+<?php endif; ?>
 
 <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
@@ -96,8 +112,9 @@ $historial_consultas      = $historial_consultas ?? [];
                 <?php endif; ?>
 
                 <hr class="my-3">
-                <form action="../controllers/antecedenteController.php" method="POST">
-                    <input type="hidden" name="accion" value="guardar">
+                <form action="../controllers/pacienteController.php" method="POST">
+                    <input type="hidden" name="tipo_formulario" value="antecedentes">
+                    <input type="hidden" name="origen" value="historial">
                     <input type="hidden" name="id_paciente" value="<?= (int)$paciente_actual['id_paciente'] ?>">
                     <label for="notas" class="form-label small fw-semibold">Agregar nota de antecedentes</label>
                     <div class="input-group">

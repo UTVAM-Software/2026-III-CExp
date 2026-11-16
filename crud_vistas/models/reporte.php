@@ -1,42 +1,50 @@
 <?php
-class reporte {
-    private $conn;
+require_once __DIR__ . '/Modelo.php';
 
-    public function __construct($db) {
-        $this->conn = $db;
-    }
+class reporte extends Modelo
+{
+    protected $tabla = 'cita';
+    protected $pk = 'id_cita';
 
     // Contar total de pacientes registrados
-    public function contarPacientes() {
+    public function contarPacientes()
+    {
         $query = "SELECT COUNT(*) AS total FROM paciente";
-        $resultado = $this->conn->query($query);
+        $stmt = $this->ejecutar($query);
+        $resultado = $stmt->get_result();
         $fila = $resultado->fetch_assoc();
         return (int)($fila['total'] ?? 0);
     }
 
     // Contar citas pendientes (programadas o confirmadas)
-    public function contarCitasPendientes() {
+    public function contarCitasPendientes()
+    {
         $query = "SELECT COUNT(*) AS total FROM cita WHERE estado IN ('programada', 'confirmada')";
-        $resultado = $this->conn->query($query);
+        $stmt = $this->ejecutar($query);
+        $resultado = $stmt->get_result();
         $fila = $resultado->fetch_assoc();
         return (int)($fila['total'] ?? 0);
     }
 
-    // 3. Contar consultas realizadas
-    public function contarConsultas() {
+    // Contar consultas realizadas
+    public function contarConsultas()
+    {
         $query = "SELECT COUNT(*) AS total FROM consulta";
-        $resultado = $this->conn->query($query);
+        $stmt = $this->ejecutar($query);
+        $resultado = $stmt->get_result();
         $fila = $resultado->fetch_assoc();
         return (int)($fila['total'] ?? 0);
     }
 
-    // 4. Calcular tasa de asistencia (% de citas que NO fueron canceladas sobre el total)
-    public function calcularTasaAsistencia() {
-        $query = "SELECT 
+    // Calcular tasa de asistencia (% de citas que NO fueron canceladas sobre el total)
+    public function calcularTasaAsistencia()
+    {
+        $query = "SELECT
                     COUNT(*) AS total,
                     SUM(CASE WHEN estado != 'cancelada' THEN 1 ELSE 0 END) AS asistidas
                   FROM cita";
-        $resultado = $this->conn->query($query);
+        $stmt = $this->ejecutar($query);
+        $resultado = $stmt->get_result();
         $fila = $resultado->fetch_assoc();
 
         $total = (int)($fila['total'] ?? 0);
@@ -47,9 +55,10 @@ class reporte {
         return round(($asistidas / $total) * 100, 1);
     }
 
-    // 5. Obtener las próximas citas para la tarjeta derecha del Dashboard
-    public function obtenerProximasCitas($limite = 4) {
-        $query = "SELECT 
+    // Obtener las próximas citas para la tarjeta derecha del Dashboard
+    public function obtenerProximasCitas($limite = 4)
+    {
+        $query = "SELECT
                     c.id_cita,
                     c.fecha,
                     c.estado,
@@ -59,11 +68,10 @@ class reporte {
                   INNER JOIN paciente p ON c.id_paciente = p.id_paciente
                   WHERE c.estado IN ('programada', 'confirmada')
                   ORDER BY c.fecha ASC
-                  LIMIT " . (int)$limite;
+                  LIMIT ?";
 
-        $resultado = $this->conn->query($query);
-        return $resultado->fetch_all(MYSQLI_ASSOC);
+        $stmt = $this->ejecutar($query, 'i', [(int)$limite]);
+        $resultado = $stmt->get_result();
+        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
     }
 }
-?>
-

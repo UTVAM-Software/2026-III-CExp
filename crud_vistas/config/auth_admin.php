@@ -1,14 +1,8 @@
 <?php
-session_start();
+require_once __DIR__ . '/auth.php';
 
-// no esta logeado
-if (!isset($_SESSION['id_usuario'])) {
-    header("Location: ../views/login.php");
-    exit();
-}
 
-// logeado pero en el admin (id_grupo 1)
-if (!isset($_SESSION['id_grupo']) || $_SESSION['id_grupo'] != 1) {
-    header("Location: ../views/citas.php");
+if (!isset($_SESSION['id_grupo']) || (int)$_SESSION['id_grupo'] !== 1) {
+    header("Location: ../views/reportes.php");
     exit();
 }

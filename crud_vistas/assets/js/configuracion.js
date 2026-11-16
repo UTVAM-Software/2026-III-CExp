@@ -6,14 +6,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const filasUsuarios = document.querySelectorAll('#tablaUsuarios tbody tr');
 
     function filtrarTablaUsuarios() {
+        const filasActuales = document.querySelectorAll('#tablaUsuarios tbody tr');
         const texto = (inputBuscar?.value || '').toLowerCase().trim();
-        const rol = (selectRol?.value || '').toLowerCase();
-        const estado = (selectEstado?.value || '').toLowerCase();
+        const rol = (selectRol?.value || '').toLowerCase().trim();
+        const estado = (selectEstado?.value || '').toLowerCase().trim();
 
-        filasUsuarios.forEach(fila => {
+        filasActuales.forEach(fila => {
             const contenidoFila = fila.textContent.toLowerCase();
-            const rolFila = (fila.getAttribute('data-rol') || '').toLowerCase();
-            const estadoFila = (fila.getAttribute('data-estado') || '').toLowerCase();
+            const rolFila = (fila.getAttribute('data-rol') || '').toLowerCase().trim();
+            const estadoFila = (fila.getAttribute('data-estado') || '').toLowerCase().trim();
 
             const coincideTexto = !texto || contenidoFila.includes(texto);
             const coincideRol = !rol || rolFila === rol;
@@ -24,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     inputBuscar?.addEventListener('input', filtrarTablaUsuarios);
+    inputBuscar?.addEventListener('keyup', filtrarTablaUsuarios);
     selectRol?.addEventListener('change', filtrarTablaUsuarios);
     selectEstado?.addEventListener('change', filtrarTablaUsuarios);
 

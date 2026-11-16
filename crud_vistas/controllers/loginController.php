@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../models/usuario.php';
 require_once '../models/grupo.php';
+require_once '../models/permiso.php';
 
 session_start();
 
@@ -10,6 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $db             = $database->getConnection();
     $usuarioModel   = new usuario($db);
     $grupoModel     = new grupo($db);
+    $permisoModel   = new permiso($db);
 
     $username_ingresado = $_POST['username'] ?? '';
     $password_ingresada = $_POST['password'] ?? '';
@@ -27,10 +29,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($datos_usuario['estado'] === 'activo') {
             session_regenerate_id(true);
 
-            $_SESSION['id_usuario']   = $datos_usuario['id_usuario'];
-            $_SESSION['username']     = $datos_usuario['username'];
-            $_SESSION['id_grupo']     = (int)$datos_usuario['id_grupo'];
-            $_SESSION['nombre_grupo'] = $datos_grupo['nombre'] ?? 'Sin grupo';  
+            $_SESSION['id_usuario']      = $datos_usuario['id_usuario'];
+            $_SESSION['nombre_completo'] = $datos_usuario['nombre_completo'] ?? $datos_usuario['username'];
+            $_SESSION['username']        = $datos_usuario['username'];
+            $_SESSION['id_grupo']        = (int)$datos_usuario['id_grupo'];
+            $_SESSION['nombre_grupo']    = $datos_grupo['nombre'] ?? 'Sin grupo';
+            $_SESSION['permisos']        = $permisoModel->obtenerCodenamesPorUsuario($datos_usuario['id_usuario']);
 
             // Redirige al dashboard o al panel
             if (isset($_SESSION['id_grupo']) && (int)$_SESSION['id_grupo'] === 1) {
