@@ -15,7 +15,7 @@ CREATE TABLE usuario(
     username VARCHAR(30) NOT NULL UNIQUE,
     contrasena VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL,
-    estado ENUM('activo', 'inactivo') DEFAULT 'inactivo'
+    estado ENUM('activo', 'inactivo') DEFAULT 'activo'
 )ENGINE=InnoDB;
 CREATE TABLE contiene(
 	id_usuario_grupo INT auto_increment PRIMARY KEY,
