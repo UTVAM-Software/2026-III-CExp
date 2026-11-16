@@ -1,8 +1,10 @@
+USE cexp_database;
+
 -- 1. Insertar Usuarios
 INSERT INTO usuario(nombre_completo, username, contrasena, email, estado) VALUES 
-('Paco Sanchez Sanchez', 'dr.paco', '12345', 'paco.sanchez@consultorio.com', 'inactivo'),
-('Gael Alvarado', 'adminPRO', 'admin123*', '253110012@utvam.edu.mx', 'activo'),
-('Team de CExp', 'adminTEAM', '123456', 'ximena@gmail.com', 'inactivo');
+('Paco Sanchez Sanchez', 'dr.paco', '$2y$10$QmbuzDfQbxSQO73x/3Zq/e4KeQGqCFLzLe/s3C6XM.LVHhGbbA7NG', 'paco.sanchez@consultorio.com', 'activo'),
+('Gael Alvarado', 'adminPRO', '$2y$10$hyxxOgc5Q.Xw/HIxSPlIdOsMI17fy8ns8GorNSlOD9olfA6dbehpe', '253110012@utvam.edu.mx', 'activo'),
+('Team de CExp', 'adminTEAM', '$2y$10$mQtSLHp4UaBpTcLZWcz38OERwg7I0112SSILgn1XhVoWSSKsoRig6', 'ximena@gmail.com', 'inactivo');
 -- 2. Insertar datos principales de el Médico
 INSERT INTO medico (id_usuario, nombre, apellido_paterno, apellido_materno, telefono, cedula_profesional, especialidad)
 VALUES (1,'Paco', 'Sanchez', 'Sanchez', '5500010101', '12345678','Medicina General');
@@ -18,7 +20,7 @@ VALUES
 INSERT INTO antecedentes (id_paciente, notas) VALUES 
 (1, 'Paciente con antecedentes alérgicos a la penicilina y asma leve controlada en la infancia.'),
 (2, 'Cirugía de apendicectomía realizada en el año 2020 sin complicaciones.'),
-(3, 'Dolor de estomago previo (gastritis confirmada'),
+(3, 'Dolor de estomago previo (gastritis confirmada)'),
 (4, 'Apendicitis, programacion de cirugia para 2027'),
 (5, 'Ectoplasma');
 -- 5. Insertar Grupos (Roles)
@@ -28,19 +30,22 @@ INSERT INTO grupo (id_grupo, nombre) VALUES
 (3, 'Recepcionista');
 -- 6. Insertar Permisos del sistema
 INSERT INTO permiso (id_permiso, nombre, codename) VALUES 
-(1, 'Crear Pacientes', 'add_patient'), -- Altas
-(2, 'Editar Pacientes', 'change_patient'), -- Cambios
-(3, 'Eliminar Pacientes', 'delete_patient'), -- Bajas
-(4, 'Ver panel de control', 'consult_panel'); -- Consultas 
--- 7. Asignar el usuario al Grupo 'Medico' (Tabla 'contiene')
+(1, 'Crear Pacientes', 'add_patient'),
+(2, 'Editar Pacientes', 'change_patient'),
+(3, 'Generar Consultas', 'add_consultation'),
+(4, 'Emitir Recetas', 'add_prescription'),
+(5, 'Ver Agenda', 'ver_agenda');
+-- 7. Asignar Usuarios a Grupos (Tabla 'contiene')
 INSERT INTO contiene (id_usuario, id_grupo) VALUES 
-(1, 2); -- El usuario 1 pertenece al grupo 2 (Medico)
+(1, 2), -- El usuario 1 (dr.paco) pertenece al grupo 2 (Medico)
+(2, 1); -- El usuario 2 (adminPRO) pertenece al grupo 1 (Administrador)
 -- 8. Asignar Permisos al Usuario (Tabla 'tiene')
 INSERT INTO tiene (id_usuario, id_permiso) VALUES 
-(1, 1), -- Puede crear pacientes 
+(1, 1), -- Puede crear pacientes
 (1, 2), -- Puede editar pacientes
-(1, 3), -- Puede eliminar pacientes
-(1, 4); -- Puede ver el panel de control
+(1, 3), -- Puede generar consultas
+(1, 4), -- Puede emitir recetas
+(1, 5); -- Puede ver agenda
 -- 9. Insertar Citas en la agenda virtual con diferentes estados
 INSERT INTO cita (id_paciente, fecha, estado) VALUES 
 (1, '2026-10-10 09:30:00', 'concluida'),
