@@ -86,3 +86,16 @@ Una vez levantado el servicio, acceder desde el navegador a:
 | Administrador (`id_grupo = 1`) | `adminPRO` | `admin123*` | Activo |
 | Médico (`id_grupo = 2`) | `dr.paco` | `12345` | Activo |
 | Admin secundario | `adminTEAM` | `123456` | Inactivo |
+
+---
+
+## Solución de problemas comunes
+
+| Problema | Causa probable | Solución |
+| :--- | :--- | :--- |
+| **`Error de conexión: Unknown database 'cexp_database'`** | No se importaron los scripts SQL en MySQL. | Ejecutar `mysql -u root -p < base_datos/01_estructura.sql` y luego `mysql -u root -p < base_datos/02_datos_iniciales.sql`. |
+| **`Error de conexión: Access denied for user...`** | Usuario o contraseña incorrectos en MySQL o en `env.php`. | Verificar `DB_HOST`, `DB_NAME`, `DB_USER` y `DB_PASS` en `Sistema_De_Gestion_CExp/config/env.php` (o en las variables de entorno del servidor). |
+| **Error `Class "mysqli" not found` o página en blanco** | Falta la extensión `php-mysqli` en PHP. | Instalar y habilitar la extensión (`sudo apt install php-mysqli && sudo systemctl restart apache2`). |
+| **`403 Forbidden` o no cargan estilos/archivos en Apache** | Permisos insuficientes en la carpeta clonada. | Aplicar `chown -R www-data:www-data /var/www/html/2026-III-CExp` y `chmod -R 755 /var/www/html/2026-III-CExp`. |
+| **`Usuario o contraseña incorrectos` al iniciar sesión** | La tabla `usuario` tiene claves en texto plano o el usuario está `inactivo`. | Verificar que `02_datos_iniciales.sql` se haya importado completo (incluye hashes bcrypt y `adminPRO` activo en grupo `1`). |
+| **Sesión no persiste o redirige siempre a `login.php`** | Carpeta de sesiones PHP sin permisos de escritura o servicio web sin reiniciar. | Revisar `session.save_path` en `php.ini` (en Linux `/var/lib/php/sessions` debe pertenecer a `www-data`) y reiniciar Apache. |
