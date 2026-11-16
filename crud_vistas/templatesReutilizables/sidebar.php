@@ -52,15 +52,19 @@ $rol_usuario_sesion    = $_SESSION['nombre_grupo'] ?? 'Médico General';
             <span class="fw-bold">Historial</span>
         </a>
 
-        <a href="agenda.php" class="nav-link sidebar-item d-flex align-items-center p-3 <?= ($pagina_activa === 'agenda') ? 'active' : '' ?>">
-            <i class="bi bi-journal-text me-2"></i>
-            <span class="fw-bold">Agenda</span>
-        </a>
+        <?php if (!function_exists('tienePermiso') || tienePermiso('ver_agenda')): ?>
+            <a href="agenda.php" class="nav-link sidebar-item d-flex align-items-center p-3 <?= ($pagina_activa === 'agenda') ? 'active' : '' ?>">
+                <i class="bi bi-journal-text me-2"></i>
+                <span class="fw-bold">Agenda</span>
+            </a>
+        <?php endif; ?>
 
-        <a href="configuracion.php" class="nav-link sidebar-item d-flex align-items-center p-3 <?= ($pagina_activa === 'configuracion') ? 'active' : '' ?>">
-            <i class="bi bi-gear me-2"></i>
-            <span class="fw-bold">Configuración</span>
-        </a>
+        <?php if ((int)($_SESSION['id_grupo'] ?? 0) === 1): ?>
+            <a href="configuracion.php" class="nav-link sidebar-item d-flex align-items-center p-3 <?= ($pagina_activa === 'configuracion') ? 'active' : '' ?>">
+                <i class="bi bi-gear me-2"></i>
+                <span class="fw-bold">Configuración</span>
+            </a>
+        <?php endif; ?>
     </nav>
 
     <!-- Boton Cerrar sesion -->

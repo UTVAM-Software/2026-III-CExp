@@ -1,0 +1,76 @@
+<?php
+require_once __DIR__ . '/Modelo.php';
+
+class permiso extends Modelo
+{
+    protected $tabla = 'permiso';
+    protected $pk = 'id_permiso';
+
+    public function listarTodos()
+    {
+        $sql = "SELECT id_permiso, nombre, codename FROM {$this->tabla} ORDER BY id_permiso ASC";
+        $stmt = $this->ejecutar($sql);
+        $resultado = $stmt->get_result();
+        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+    }
+
+    public function crearPermiso($nombre, $codename)
+    {
+        $sql = "INSERT INTO {$this->tabla} (nombre, codename) VALUES (?, ?)";
+        $this->ejecutar($sql, 'ss', [trim($nombre), trim($codename)]);
+        return (int)$this->conn->insert_id;
+    }
+
+    public function actualizarPermiso($id_permiso, $nombre, $codename)
+    {
+        $sql = "UPDATE {$this->tabla} SET nombre = ?, codename = ? WHERE {$this->pk} = ?";
+        $this->ejecutar($sql, 'ssi', [trim($nombre), trim($codename), (int)$id_permiso]);
+        return true;
+    }
+
+    public function obtenerCodenamesPorUsuario($id_usuario)
+    {
+        $query = "SELECT p.codename
+                  FROM {$this->tabla} p
+                  INNER JOIN tiene t ON p.id_permiso = t.id_permiso
+                  WHERE t.id_usuario = ?";
+        $stmt = $this->ejecutar($query, 'i', [(int)$id_usuario]);
+        $resultado = $stmt->get_result();
+        $filas = $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+        return array_column($filas, 'codename');
+    }
+
+    public function sincronizarPermisosUsuario($id_usuario, $permisos_ids = [])
+    {
+        $id_usuario = (int)$id_usuario;
+        if ($id_usuario <= 0) {
+            return false;
+        }
+
+        $this->conn->begin_transaction();
+        try {
+            $this->ejecutar("DELETE FROM tiene WHERE id_usuario = ?", 'i', [$id_usuario]);
+
+            if (!empty($permisos_ids)) {
+                $stmtInsert = $this->conn->prepare("INSERT INTO tiene (id_usuario, id_permiso) VALUES (?, ?)");
+                if (!$stmtInsert) {
+                    throw new RuntimeException("Error al preparar inserción de permisos: " . $this->conn->error);
+                }
+
+                foreach ($permisos_ids as $id_permiso) {
+                    $id_permiso = (int)$id_permiso;
+                    if ($id_permiso > 0) {
+                        $stmtInsert->bind_param('ii', $id_usuario, $id_permiso);
+                        $stmtInsert->execute();
+                    }
+                }
+            }
+
+            $this->conn->commit();
+            return true;
+        } catch (Throwable $e) {
+            $this->conn->rollback();
+            throw $e;
+        }
+    }
+}

@@ -1,5 +1,6 @@
 <?php
 require_once '../config/auth_admin.php';
+require_once '../controllers/usuarioController.php';
 $titulo_pagina = 'Configuración - Consultorio Médico';
 $pagina_activa = 'configuracion';
 $script_adicional = '../assets/js/configuracion.js';
@@ -10,11 +11,25 @@ if (!defined('EN_PLANTILLA_BASE')) {
     return;
 }
 
-// VARIABLES TEMPPORRALES CHAVAL , HASTA QUE HAGAS LOS CONTROLADORES
-$roles_lista    = $roles_lista ?? [];
-$permisos_lista = $permisos_lista ?? [];
-$usuarios_lista = $usuarios_lista ?? [];
+$datos_config   = obtenerDatosConfiguracion();
+$roles_lista    = $datos_config['roles_lista'] ?? [];
+$permisos_lista = $datos_config['permisos_lista'] ?? [];
+$usuarios_lista = $datos_config['usuarios_lista'] ?? [];
 ?>
+
+<?php if (!empty($_GET['mensaje'])): ?>
+    <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($_GET['mensaje']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($_GET['error'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($_GET['error']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+<?php endif; ?>
 
 <section class="bg-white p-4 rounded-4 shadow-sm mb-4">
     <header class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
@@ -378,7 +393,7 @@ $usuarios_lista = $usuarios_lista ?? [];
     </div>
 </div>
 
-<!-- MODAL 4: CREAR / EDITAR PERMISO -->
+<!-- MODAL 4: CREAR Y EDITAR PERMISO -->
 <div class="modal fade" id="modalPermiso" tabindex="-1" aria-labelledby="modalPermisoLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form class="modal-content border-0 shadow" action="../controllers/usuarioController.php" method="POST">

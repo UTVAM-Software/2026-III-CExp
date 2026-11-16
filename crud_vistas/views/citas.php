@@ -1,4 +1,6 @@
 <?php
+require_once '../config/auth.php';
+require_once '../controllers/citaController.php';
 $titulo_pagina = 'Citas - Consultorio Médico';
 $pagina_activa = 'citas';
 $cargar_fullcalendar = true;
@@ -9,12 +11,27 @@ if (!defined('EN_PLANTILLA_BASE')) {
     require_once '../templatesReutilizables/template.base.php';
     return;
 }
-// VARIABLES TEMPPORRALES CHAVAL , HASTA QUE HAGAS LOS CONTROLADORES
-$medicos             = $medicos ?? [];
-$pacientes_recientes = $pacientes_recientes ?? [];
-$citas_bd            = $citas_bd ?? [];
-$eventos_citas       = $eventos_citas ?? [];
+
+$datos_citas         = obtenerDatosCitas();
+$medicos             = $datos_citas['medicos'] ?? [];
+$pacientes_recientes = $datos_citas['pacientes_recientes'] ?? [];
+$citas_bd            = $datos_citas['citas_bd'] ?? [];
+$eventos_citas       = $datos_citas['eventos_citas'] ?? [];
 ?>
+
+<?php if (!empty($_GET['mensaje'])): ?>
+    <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($_GET['mensaje']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($_GET['error'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($_GET['error']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+<?php endif; ?>
 
 <!-- SECCIÓN PRINCIPAL DE CITAS -->
 <section class="bg-white p-4 rounded-4 shadow-sm mb-4">

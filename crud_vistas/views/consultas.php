@@ -1,4 +1,6 @@
 <?php
+require_once '../config/auth.php';
+require_once '../controllers/consultaController.php';
 $titulo_pagina = 'Consultas Médicas - CEx+';
 $pagina_activa = 'consultas';
 
@@ -8,12 +10,12 @@ if (empty($vista)) {
     return;
 }
 
-// VARIABLES TEMPPORRALES CHAVAL , HASTA QUE HAGAS LOS CONTROLADORES
-$pacientes_lista     = $pacientes_lista ?? [];
-$citas_pendientes    = $citas_pendientes ?? [];
-$cita_seleccionada   = $cita_seleccionada ?? null;
-$paciente_actual     = $paciente_actual ?? null;
-$consultas_recientes = $consultas_recientes ?? [];
+$datos_consultas     = obtenerDatosConsultas($_GET['id_paciente'] ?? 0, $_GET['id_cita'] ?? 0);
+$pacientes_lista     = $datos_consultas['pacientes_lista'] ?? [];
+$citas_pendientes    = $datos_consultas['citas_pendientes'] ?? [];
+$cita_seleccionada   = $datos_consultas['cita_seleccionada'] ?? null;
+$paciente_actual     = $datos_consultas['paciente_actual'] ?? null;
+$consultas_recientes = $datos_consultas['consultas_recientes'] ?? [];
 ?>
 
 <header class="d-flex justify-content-between align-items-center mb-4">
@@ -76,6 +78,7 @@ $consultas_recientes = $consultas_recientes ?? [];
 </section>
 
 <!-- Formulario principal de consulta -->
+<?php if (tienePermiso('add_consultation')): ?>
 <form action="../controllers/consultaController.php" method="POST" class="row g-4">
     <input type="hidden" name="accion" value="guardar">
 
@@ -198,6 +201,11 @@ $consultas_recientes = $consultas_recientes ?? [];
         </section>
     </div>
 </form>
+<?php else: ?>
+    <div class="alert alert-warning rounded-4 shadow-sm mb-4">
+        <i class="bi bi-lock-fill me-2"></i>No tienes permiso asignado para registrar nuevas consultas médicas.
+    </div>
+<?php endif; ?>
 
 <!-- Consultas recientes -->
 <section class="bg-white p-4 rounded-4 shadow-sm mt-4">

@@ -1,49 +1,48 @@
 <?php
-class grupo {
-    private $conn;
-    private $table_name = "grupo";
+require_once __DIR__ . '/Modelo.php';
 
-    public function __construct($db) {
-        $this->conn = $db;
-    }
+class grupo extends Modelo
+{
+    protected $tabla = 'grupo';
+    protected $pk = 'id_grupo';
 
-    // Método para buscar un grupo por su nombre  
-    public function getgrupoByNombre($nombre) {
-        // Consulta con marcador de posición '?' estándar en MySQLi
-        $query = "SELECT id_grupo, nombre FROM " . $this->table_name . " WHERE nombre = ? LIMIT 1";
-        
-        $stmt = $this->conn->prepare($query);
-        if (!$stmt) {
-            die("Error al preparar la consulta: " . $this->conn->error);
-        }
-        
-        // Limpiar y vincular el parámetro 
-        $nombre = htmlspecialchars(strip_tags($nombre));
-        $stmt->bind_param("s", $nombre);
-        
-        $stmt->execute();
+    public function getgrupoByNombre($nombre)
+    {
+        $sql = "SELECT id_grupo, nombre FROM {$this->tabla} WHERE nombre = ? LIMIT 1";
+        $stmt = $this->ejecutar($sql, 's', [trim($nombre)]);
         $resultado = $stmt->get_result();
-        
-        // Retornar el array asociativo del grupo o null si no existe
-        return $resultado->fetch_assoc();
-    }
-    public function getgrupoById($id){
-        $query = "SELECT id_grupo, nombre FROM " . $this->table_name . " WHERE id_grupo = ? LIMIT 1";
-        $stmt = $this->conn->prepare($query);
-        if (!$stmt) {
-            die("Error al preparar la consulta: " . $this->conn->error);
-        }
-        
-        // Limpiar y vincular el parámetro 
-        $id = htmlspecialchars(strip_tags($id));
-        $stmt->bind_param("i", $id);
-        
-        $stmt->execute();
-        $resultadoid = $stmt->get_result();
-        
-        // Retornar el array asociativo del grupo o null si no existe
-        return $resultadoid->fetch_assoc();
+        return $resultado ? $resultado->fetch_assoc() : null;
     }
 
+    public function getgrupoById($id)
+    {
+        return $this->get($id);
     }
-?>
+
+    public function listarConTotalUsuarios()
+    {
+        $sql = "SELECT g.id_grupo, g.nombre, COUNT(c.id_usuario) AS total_usuarios
+                FROM {$this->tabla} g
+                LEFT JOIN contiene c ON g.id_grupo = c.id_grupo
+                GROUP BY g.id_grupo, g.nombre
+                ORDER BY g.id_grupo ASC";
+
+        $stmt = $this->ejecutar($sql);
+        $resultado = $stmt->get_result();
+        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+    }
+
+    public function crearGrupo($nombre)
+    {
+        $sql = "INSERT INTO {$this->tabla} (nombre) VALUES (?)";
+        $this->ejecutar($sql, 's', [trim($nombre)]);
+        return (int)$this->conn->insert_id;
+    }
+
+    public function actualizarGrupo($id_grupo, $nombre)
+    {
+        $sql = "UPDATE {$this->tabla} SET nombre = ? WHERE {$this->pk} = ?";
+        $this->ejecutar($sql, 'si', [trim($nombre), (int)$id_grupo]);
+        return true;
+    }
+}

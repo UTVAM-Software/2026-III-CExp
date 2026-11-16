@@ -1,4 +1,6 @@
 <?php
+require_once '../config/auth.php';
+require_once '../controllers/reporteController.php';
 $titulo_pagina = 'Reportes y Estadísticas - Consultorio Médico';
 $pagina_activa = 'reportes';
 
@@ -8,12 +10,12 @@ if (!defined('EN_PLANTILLA_BASE')) {
     return;
 }
 
-// VARIABLES TEMPPORRALES CHAVAL , HASTA QUE HAGAS LOS CONTROLADORES
-$total_pacientes  = $total_pacientes ?? 0;
-$citas_pendientes = $citas_pendientes ?? 0;
-$total_consultas  = $total_consultas ?? 0;
-$tasa_asistencia  = $tasa_asistencia ?? 0;
-$proximas_citas   = $proximas_citas ?? [];
+$datos_reportes   = obtenerDatosReportes();
+$total_pacientes  = $datos_reportes['total_pacientes'] ?? 0;
+$citas_pendientes = $datos_reportes['citas_pendientes'] ?? 0;
+$total_consultas  = $datos_reportes['total_consultas'] ?? 0;
+$tasa_asistencia  = $datos_reportes['tasa_asistencia'] ?? 0;
+$proximas_citas   = $datos_reportes['proximas_citas'] ?? [];
 
 $dias_semana = [
     'Sunday'    => 'Domingo',

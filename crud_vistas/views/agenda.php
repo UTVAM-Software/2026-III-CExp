@@ -1,4 +1,7 @@
 <?php
+require_once '../config/auth.php';
+requerirPermiso('ver_agenda', '../views/reportes.php');
+require_once '../controllers/citaController.php';
 $titulo_pagina = 'Agenda Médica - CEx+';
 $pagina_activa = 'agenda';
 
@@ -8,12 +11,12 @@ if (empty($vista)) {
     return;
 }
 
-// VARIABLES TEMPPORRALES CHAVAL , HASTA QUE HAGAS LOS CONTROLADORES
-$medicos_lista          = $medicos_lista ?? [];
-$pacientes_lista        = $pacientes_lista ?? [];
-$id_medico_seleccionado = $id_medico_seleccionado ?? (int)($_GET['id_medico'] ?? 0);
-$fecha_seleccionada     = $fecha_seleccionada ?? ($_GET['fecha'] ?? date('Y-m-d'));
-$citas_por_hora         = $citas_por_hora ?? [];
+$datos_agenda           = obtenerDatosAgenda($_GET['id_medico'] ?? 0, $_GET['fecha'] ?? '');
+$medicos_lista          = $datos_agenda['medicos_lista'] ?? [];
+$pacientes_lista        = $datos_agenda['pacientes_lista'] ?? [];
+$id_medico_seleccionado = $datos_agenda['id_medico_seleccionado'] ?? 0;
+$fecha_seleccionada     = $datos_agenda['fecha_seleccionada'] ?? date('Y-m-d');
+$citas_por_hora         = $datos_agenda['citas_por_hora'] ?? [];
 
 $bloques_manana = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30'];
 $bloques_tarde  = ['15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'];
@@ -43,6 +46,13 @@ $bloques_tarde  = ['15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'
 <?php if (!empty($_GET['mensaje'])): ?>
     <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm" role="alert">
         <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($_GET['mensaje']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($_GET['error'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($_GET['error']) ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
 <?php endif; ?>
@@ -131,6 +141,8 @@ $bloques_tarde  = ['15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'
             </header>
             <form action="../controllers/citaController.php" method="POST">
                 <input type="hidden" name="accion" value="crear">
+                <input type="hidden" name="origen" value="agenda">
+                <input type="hidden" name="id_medico_filtro" value="<?= (int)$id_medico_seleccionado ?>">
 
                 <div class="mb-3">
                     <label for="id_paciente" class="form-label small fw-semibold">Paciente</label>

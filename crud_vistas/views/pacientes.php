@@ -1,4 +1,6 @@
 <?php
+require_once '../config/auth.php';
+require_once '../controllers/pacienteController.php';
 $titulo_pagina = 'Pacientes - Consultorio Médico';
 $pagina_activa = 'pacientes';
 
@@ -8,13 +10,28 @@ if (!defined('EN_PLANTILLA_BASE')) {
     return;
 }
 
-// VARIABLES TEMPPORRALES CHAVAL , HASTA QUE HAGAS LOS CONTROLADORES
-$medicos_lista   = $medicos_lista ?? [];
-$pacientes_lista = $pacientes_lista ?? [];
 $filtro_buscar   = trim($_GET['buscar'] ?? '');
 $filtro_medico   = $_GET['medico'] ?? '';
 $filtro_alergia  = $_GET['alergia'] ?? '';
+
+$datos_pacientes = obtenerDatosPacientes($filtro_buscar, $filtro_medico, $filtro_alergia);
+$medicos_lista   = $datos_pacientes['medicos_lista'] ?? [];
+$pacientes_lista = $datos_pacientes['pacientes_lista'] ?? [];
 ?>
+
+<?php if (!empty($_GET['mensaje'])): ?>
+    <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($_GET['mensaje']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($_GET['error'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($_GET['error']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+<?php endif; ?>
 
 <!-- SECCION PRINCIPAL DE PACIENTES -->
 <section class="bg-white p-4 rounded-4 shadow-sm mb-4">
@@ -25,9 +42,11 @@ $filtro_alergia  = $_GET['alergia'] ?? '';
             </h4>
             <p class="text-muted small mb-0">Directorio clínico de pacientes, alergias y antecedentes médicos.</p>
         </div>
-        <button type="button" class="btn btn-primary fw-semibold px-3 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalNuevoPaciente">
-            <i class="bi bi-person-plus-fill me-1"></i>Nuevo Paciente
-        </button>
+        <?php if (tienePermiso('add_patient')): ?>
+            <button type="button" class="btn btn-primary fw-semibold px-3 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalNuevoPaciente">
+                <i class="bi bi-person-plus-fill me-1"></i>Nuevo Paciente
+            </button>
+        <?php endif; ?>
     </header>
 
     <!-- Barra de Filtros  -->
@@ -122,9 +141,11 @@ $filtro_alergia  = $_GET['alergia'] ?? '';
                                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-3 me-1" data-bs-toggle="modal" data-bs-target="#modalAntecedentes<?= $id_p ?>">
                                     <i class="bi bi-journal-medical"></i> Antecedentes
                                 </button>
-                                <button type="button" class="btn btn-outline-primary btn-sm rounded-3 me-1" data-bs-toggle="modal" data-bs-target="#modalEditarPaciente<?= $id_p ?>">
-                                    <i class="bi bi-pencil"></i> Editar
-                                </button>
+                                <?php if (tienePermiso('change_patient')): ?>
+                                    <button type="button" class="btn btn-outline-primary btn-sm rounded-3 me-1" data-bs-toggle="modal" data-bs-target="#modalEditarPaciente<?= $id_p ?>">
+                                        <i class="bi bi-pencil"></i> Editar
+                                    </button>
+                                <?php endif; ?>
                                 <button type="button" class="btn btn-outline-danger btn-sm rounded-3" data-bs-toggle="modal" data-bs-target="#modalEliminarPaciente<?= $id_p ?>">
                                     <i class="bi bi-trash"></i>
                                 </button>
