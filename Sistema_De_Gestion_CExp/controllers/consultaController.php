@@ -143,3 +143,4 @@ if (basename($_SERVER['PHP_SELF']) === 'consultaController.php') {
     header("Location: ../views/consultas.php");
     exit();
 }
+?>

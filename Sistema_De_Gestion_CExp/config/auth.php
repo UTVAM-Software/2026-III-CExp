@@ -27,3 +27,4 @@ function requerirPermiso($codename, $redirigir = '../views/reportes.php')
         exit();
     }
 }
+?>

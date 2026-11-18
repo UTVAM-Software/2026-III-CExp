@@ -88,3 +88,4 @@ if (basename($_SERVER['PHP_SELF']) === 'pacienteController.php') {
     header("Location: ../views/pacientes.php");
     exit();
 }
+?>

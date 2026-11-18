@@ -125,3 +125,4 @@ if (basename($_SERVER['PHP_SELF']) === 'citaController.php') {
     header("Location: ../views/citas.php");
     exit();
 }
+?>

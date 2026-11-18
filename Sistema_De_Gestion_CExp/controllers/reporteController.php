@@ -17,3 +17,4 @@ function obtenerDatosReportes()
         'proximas_citas'   => $reporteModel->obtenerProximasCitas(4),
     ];
 }
+?>

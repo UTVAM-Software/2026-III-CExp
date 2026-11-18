@@ -141,3 +141,4 @@ if (basename($_SERVER['PHP_SELF']) === 'usuarioController.php') {
     header("Location: ../views/configuracion.php");
     exit();
 }
+?>
