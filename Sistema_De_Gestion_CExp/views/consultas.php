@@ -1,6 +1,8 @@
 <?php
 require_once '../config/auth.php';
 require_once '../controllers/consultaController.php';
+// requerirPermiso('add_consultation');
+
 $titulo_pagina = 'Consultas Médicas - CEx+';
 $pagina_activa = 'consultas';
 

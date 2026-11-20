@@ -1,15 +1,17 @@
-CREATE DATABASE IF NOT EXISTS cexp_database;
+CREATE DATABASE IF NOT EXISTS cexp_database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE cexp_database;
-CREATE TABLE grupo(
+
+-- Grupos, permisos y usuarios
+CREATE TABLE IF NOT EXISTS grupo(
 	id_grupo INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(15) UNIQUE NOT NULL
 )ENGINE=InnoDB;
-CREATE TABLE permiso(
+CREATE TABLE IF NOT EXISTS permiso(
 	id_permiso INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(60) UNIQUE NOT NULL,
     codename VARCHAR(20) NOT NULL
 )ENGINE=InnoDB;
-CREATE TABLE usuario(
+CREATE TABLE IF NOT EXISTS usuario(
 	id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     nombre_completo VARCHAR(60) NOT NULL,
     username VARCHAR(30) NOT NULL UNIQUE,
@@ -17,21 +19,25 @@ CREATE TABLE usuario(
     email VARCHAR(100) NOT NULL,
     estado ENUM('activo', 'inactivo') DEFAULT 'activo'
 )ENGINE=InnoDB;
-CREATE TABLE contiene(
+
+-- Permisos y uniones
+CREATE TABLE IF NOT EXISTS contiene(
 	id_usuario_grupo INT auto_increment PRIMARY KEY,
-    id_usuario INT NOT NULL,
+    id_usuario INT UNIQUE NOT NULL,
     id_grupo INT NOT NULL,
     CONSTRAINT fk_usuario_contiene_grupo FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
     CONSTRAINT fk_grupo_contiene_usuario FOREIGN KEY (id_grupo) REFERENCES grupo(id_grupo) ON DELETE CASCADE
 )ENGINE=InnoDB;
-CREATE TABLE tiene(
-	id_permiso_usuario INT AUTO_INCREMENT PRIMARY KEY,
-    id_usuario INT NOT NULL,
+CREATE TABLE IF NOT EXISTS tiene(
+	id_permiso_grupo INT AUTO_INCREMENT PRIMARY KEY,
+    id_grupo INT NOT NULL,
     id_permiso INT NOT NULL,
-    CONSTRAINT fk_usuario_tiene_permiso FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    CONSTRAINT fk_grupo_tiene_permiso FOREIGN KEY (id_grupo) REFERENCES grupo(id_grupo) ON DELETE CASCADE,
     CONSTRAINT fk_permiso_tiene_usuario FOREIGN KEY (id_permiso) REFERENCES permiso(id_permiso) ON DELETE CASCADE
 )ENGINE=InnoDB;
-CREATE TABLE medico(
+
+-- Medicos y pacientes
+CREATE TABLE IF NOT EXISTS medico(
 	id_medico INT auto_increment PRIMARY KEY,
     id_usuario INT UNIQUE NOT NULL,
     nombre VARCHAR(20) NOT NULL,
@@ -40,9 +46,9 @@ CREATE TABLE medico(
     telefono VARCHAR(12) NOT NULL,
     cedula_profesional VARCHAR(8) NOT NULL,
     especialidad TEXT,
-    CONSTRAINT fk_usuario_medico FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+    CONSTRAINT fk_usuario_medico FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE RESTRICT
 )ENGINE=InnoDB;
-CREATE TABLE paciente(
+CREATE TABLE IF NOT EXISTS paciente(
 	id_paciente INT AUTO_INCREMENT PRIMARY KEY,
     id_medico INT NOT NULL,
 	nombre VARCHAR(20) NOT NULL,
@@ -51,14 +57,29 @@ CREATE TABLE paciente(
 	fecha_nacimiento DATE NOT NULL,
 	alergia TEXT,
 	contacto VARCHAR(100),
-    CONSTRAINT fk_medico_paciente FOREIGN KEY (id_medico) REFERENCES medico(id_medico) ON DELETE CASCADE
+    CONSTRAINT fk_medico_paciente FOREIGN KEY (id_medico) REFERENCES medico(id_medico) ON DELETE RESTRICT
 )ENGINE=InnoDB;
-CREATE TABLE receta(
+
+-- Citas, antecedentes, recetas y consultas
+CREATE TABLE IF NOT EXISTS cita(
+	id_cita INT AUTO_INCREMENT PRIMARY KEY,
+	id_paciente int NOT NULL,
+	fecha DATETIME NOT NULL,
+	estado ENUM('cancelada','confirmada','concluida','programada') DEFAULT 'programada',
+	CONSTRAINT fk_paciente_cita FOREIGN KEY (id_paciente) REFERENCES paciente(id_paciente) ON DELETE RESTRICT
+)ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS antecedentes(
+	id_antecedente INT AUTO_INCREMENT PRIMARY KEY,
+	id_paciente int NOT NULL,
+	notas TEXT NOT NULL,
+	CONSTRAINT fk_paciente_antecedente FOREIGN KEY (id_paciente) REFERENCES paciente(id_paciente) ON DELETE RESTRICT
+)ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS receta(
 	id_receta INT AUTO_INCREMENT PRIMARY KEY,
 	diagnostico text,
 	fecha DATETIME DEFAULT CURRENT_TIMESTAMP
 )ENGINE=InnoDB;
-CREATE TABLE receta_detalle(
+CREATE TABLE IF NOT EXISTS receta_detalle(
 	id_detalle INT AUTO_INCREMENT PRIMARY KEY,
 	id_receta int NOT NULL,
 	medicamento varchar(100) NOT NULL,
@@ -67,20 +88,7 @@ CREATE TABLE receta_detalle(
 	frecuencia varchar(50) NOT NULL,
 	CONSTRAINT fk_detalle_receta FOREIGN KEY (id_receta) REFERENCES receta(id_receta) ON DELETE CASCADE
 )ENGINE=InnoDB;
-CREATE TABLE cita(
-	id_cita INT AUTO_INCREMENT PRIMARY KEY,
-	id_paciente int NOT NULL,
-	fecha DATETIME NOT NULL,
-	estado ENUM('cancelada','confirmada','concluida','programada') DEFAULT 'programada',
-	CONSTRAINT fk_paciente_cita FOREIGN KEY (id_paciente) REFERENCES paciente(id_paciente) ON DELETE CASCADE
-)ENGINE=InnoDB;
-CREATE TABLE antecedentes(
-	id_antecedente INT AUTO_INCREMENT PRIMARY KEY,
-	id_paciente int NOT NULL,
-	notas TEXT NOT NULL,
-	CONSTRAINT fk_paciente_antecedente FOREIGN KEY (id_paciente) REFERENCES paciente(id_paciente) ON DELETE CASCADE
-)ENGINE=InnoDB;
-CREATE TABLE consulta(
+CREATE TABLE IF NOT EXISTS consulta(
 	id_consulta INT AUTO_INCREMENT PRIMARY KEY,
 	id_paciente int NOT NULL,
 	id_receta int NOT NULL,
@@ -90,7 +98,7 @@ CREATE TABLE consulta(
 	saturacion_oxigeno int NOT NULL,
 	frecuencia_respiratoria int NOT NULL,
 	pulso_cardiaco int NOT NULL,
-	CONSTRAINT fk_paciente_consulta FOREIGN KEY (id_paciente) REFERENCES paciente(id_paciente) ON DELETE CASCADE,
-	CONSTRAINT fk_receta_consulta FOREIGN KEY (id_receta) REFERENCES receta(id_receta) ON DELETE CASCADE,
-    CONSTRAINT fk_cita_consulta FOREIGN KEY (id_cita) REFERENCES cita(id_cita) ON DELETE CASCADE
+	CONSTRAINT fk_paciente_consulta FOREIGN KEY (id_paciente) REFERENCES paciente(id_paciente) ON DELETE RESTRICT,
+	CONSTRAINT fk_receta_consulta FOREIGN KEY (id_receta) REFERENCES receta(id_receta) ON DELETE RESTRICT,
+    CONSTRAINT fk_cita_consulta FOREIGN KEY (id_cita) REFERENCES cita(id_cita) ON DELETE SET NULL
 )ENGINE=InnoDB;

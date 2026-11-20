@@ -1,6 +1,8 @@
 <?php
 require_once '../config/auth_admin.php';
 require_once '../controllers/usuarioController.php';
+// requerirPermiso('add_consultation');
+
 $titulo_pagina = 'Configuración - Consultorio Médico';
 $pagina_activa = 'configuracion';
 $script_adicional = '../assets/js/configuracion.js';
@@ -10,11 +12,12 @@ if (!defined('EN_PLANTILLA_BASE')) {
     require_once '../templatesReutilizables/template.base.php';
     return;
 }
-
+// var_dump(obtenerDatosConfiguracion());
 $datos_config   = obtenerDatosConfiguracion();
 $roles_lista    = $datos_config['roles_lista'] ?? [];
 $permisos_lista = $datos_config['permisos_lista'] ?? [];
-$usuarios_lista = $datos_config['usuarios_lista'] ?? [];
+$grupos_lista = $datos_config['grupos_lista'] ?? [];
+$usuario_lista = $datos_config['usuario_lista'] ?? [];
 ?>
 
 <?php if (!empty($_GET['mensaje'])): ?>
@@ -111,8 +114,8 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($usuarios_lista as $u):
-                            $badgeEstado = ($u['estado'] === 'activo')
+                        <?php foreach ($usuario_lista as $u):
+                            $badgeEstado = ($u['estado'] === 'activo') //ERROR EN EL ESTADO
                                 ? 'bg-success-subtle text-success-emphasis'
                                 : 'bg-danger-subtle text-danger-emphasis';
                         ?>
