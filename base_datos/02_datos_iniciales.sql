@@ -15,7 +15,7 @@ INSERT INTO permiso (id_permiso, nombre, codename) VALUES
 (5, 'Ver Agenda', 'ver_agenda'),
 (6, 'Asignar roles', 'add_roles');
 -- 3. Insertar Usuarios
-INSERT INTO usuario(nombre_completo, username, contrasena, email, estado) VALUES 
+INSERT INTO usuario(id_usuario, nombre_completo, username, contrasena, email, estado) VALUES 
 (1, 'Admin Demo', 'adminDemo', '$2y$10$dkx1Zc3gQzr5fRdkznmMlOmRvHhZFMRpgk.Nf996dccYL.JK2ynSO', 'admin.demo@ejemplo.com', 'activo'),
 (2, 'Ana Lopez Ramirez', 'dra.ana', '$2y$10$kkADXV.I67kFsltFb39wieOiJXKmofh9gvxkFSApF.aqF8uX5OYKK', 'ana.lopez@ejemplo.com', 'activo'),
 (3, 'Mario Gutierrez Diaz', 'recep.mario', '$2y$10$JwVQdkQWiKi93alzhxBaoO5NoJL9wGJVGV95K0RUTeQyTEXbYYlQi', 'mario.gutierrez@ejemplo.com', 'activo'),
