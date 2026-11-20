@@ -28,13 +28,13 @@ class permiso extends Modelo
         return true;
     }
 
-    public function obtenerCodenamesPorUsuario($id_usuario)
+    public function obtenerCodenamesPorUsuario($id_grupo)
     {
         $query = "SELECT p.codename
                   FROM {$this->tabla} p
                   INNER JOIN tiene t ON p.id_permiso = t.id_permiso
-                  WHERE t.id_usuario = ?";
-        $stmt = $this->ejecutar($query, 'i', [(int)$id_usuario]);
+                  WHERE t.id_grupo = ?";
+        $stmt = $this->ejecutar($query, 'i', [(int)$id_grupo]);
         $resultado = $stmt->get_result();
         $filas = $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
         return array_column($filas, 'codename');

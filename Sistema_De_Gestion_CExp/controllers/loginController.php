@@ -35,7 +35,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['id_grupo']        = (int)$datos_usuario['id_grupo'];
             $_SESSION['nombre_grupo']    = $datos_grupo['nombre'] ?? 'Sin grupo';
             $_SESSION['permisos']        = $permisoModel->obtenerCodenamesPorUsuario($datos_usuario['id_usuario']);
-
+            $_SESSION['permisos']        = $usuarioModel->getPermisoPorUsuario($datos_usuario['id_usuario']);
+            
             // Redirige al dashboard o al panel
             if (isset($_SESSION['id_grupo']) && (int)$_SESSION['id_grupo'] === 1) {
                 header("Location: ../views/configuracion.php");

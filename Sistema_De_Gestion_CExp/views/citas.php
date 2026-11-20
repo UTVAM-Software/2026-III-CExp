@@ -2,6 +2,7 @@
 require_once '../config/auth.php';
 require_once '../controllers/citaController.php';
 $titulo_pagina = 'Citas - Consultorio Médico';
+// requerirPermiso('add_date');
 $pagina_activa = 'citas';
 $cargar_fullcalendar = true;
 $script_adicional = '../assets/js/calendario.js';

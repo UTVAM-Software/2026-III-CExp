@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS usuario(
 -- Permisos y uniones
 CREATE TABLE IF NOT EXISTS contiene(
 	id_usuario_grupo INT auto_increment PRIMARY KEY,
-    id_usuario INT NOT NULL,
+    id_usuario INT UNIQUE NOT NULL,
     id_grupo INT NOT NULL,
     CONSTRAINT fk_usuario_contiene_grupo FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
     CONSTRAINT fk_grupo_contiene_usuario FOREIGN KEY (id_grupo) REFERENCES grupo(id_grupo) ON DELETE CASCADE
