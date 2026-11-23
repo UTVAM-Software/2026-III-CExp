@@ -14,10 +14,10 @@ if (!defined('EN_PLANTILLA_BASE')) {
 }
 // var_dump(obtenerDatosConfiguracion());
 $datos_config   = obtenerDatosConfiguracion();
-$roles_lista    = $datos_config['roles_lista'] ?? [];
+//$roles_lista    = $datos_config['roles_lista'] ?? [];
 $permisos_lista = $datos_config['permisos_lista'] ?? [];
 $grupos_lista = $datos_config['grupos_lista'] ?? [];
-$usuario_lista = $datos_config['usuario_lista'] ?? [];
+$usuarios_lista = $datos_config['usuarios_lista'] ?? [];
 ?>
 
 <?php if (!empty($_GET['mensaje'])): ?>
@@ -79,7 +79,7 @@ $usuario_lista = $datos_config['usuario_lista'] ?? [];
                 <div class="col-auto">
                     <select id="filtroRolUsuario" class="form-select form-select-sm">
                         <option value="">Todos los roles</option>
-                        <?php foreach ($roles_lista as $r): ?>
+                        <?php foreach ($permisos_lista as $r): ?>
                             <option value="<?= htmlspecialchars($r['nombre']) ?>"><?= htmlspecialchars($r['nombre']) ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -114,7 +114,8 @@ $usuario_lista = $datos_config['usuario_lista'] ?? [];
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($usuario_lista as $u):
+                    
+                        <?php foreach ($usuarios_lista as $u):
                             $badgeEstado = ($u['estado'] === 'activo') //ERROR EN EL ESTADO
                                 ? 'bg-success-subtle text-success-emphasis'
                                 : 'bg-danger-subtle text-danger-emphasis';
@@ -191,7 +192,7 @@ $usuario_lista = $datos_config['usuario_lista'] ?? [];
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($roles_lista as $r): ?>
+                        <?php foreach ($grupos_lista as $r): ?>
                             <tr>
                                 <td class="ps-3 fw-medium text-secondary">#<?= (int)$r['id_grupo'] ?></td>
                                 <td class="fw-semibold"><?= htmlspecialchars($r['nombre']) ?></td>
@@ -235,7 +236,9 @@ $usuario_lista = $datos_config['usuario_lista'] ?? [];
                         </tr>
                     </thead>
                     <tbody>
+
                         <?php foreach ($permisos_lista as $perm): ?>
+
                             <tr>
                                 <td class="ps-3 fw-medium text-secondary">#<?= (int)$perm['id_permiso'] ?></td>
                                 <td class="fw-semibold"><?= htmlspecialchars($perm['nombre']) ?></td>
@@ -304,7 +307,7 @@ $usuario_lista = $datos_config['usuario_lista'] ?? [];
                         <label for="id_grupo" class="form-label fw-semibold small">Perfil / Rol (Grupo)</label>
                         <select name="id_grupo" id="id_grupo" class="form-select" required>
                             <option value="" selected disabled>Selecciona un rol...</option>
-                            <?php foreach ($roles_lista as $r): ?>
+                            <?php foreach ($grupos_lista as $r): ?>
                                 <option value="<?= (int)$r['id_grupo'] ?>"><?= htmlspecialchars($r['nombre']) ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -367,7 +370,7 @@ $usuario_lista = $datos_config['usuario_lista'] ?? [];
     </div>
 </div>
 
-<!-- MODAL 3: CREAR,EDITAR PERFIL O ROL -->
+<!-- CREAR,EDITAR PERFIL O ROL -->
 <div class="modal fade" id="modalRol" tabindex="-1" aria-labelledby="modalRolLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <form class="modal-content border-0 shadow" action="../controllers/usuarioController.php" method="POST">
@@ -396,7 +399,7 @@ $usuario_lista = $datos_config['usuario_lista'] ?? [];
     </div>
 </div>
 
-<!-- MODAL 4: CREAR Y EDITAR PERMISO -->
+<!--CREAR Y EDITAR PERMISO -->
 <div class="modal fade" id="modalPermiso" tabindex="-1" aria-labelledby="modalPermisoLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form class="modal-content border-0 shadow" action="../controllers/usuarioController.php" method="POST">
@@ -430,7 +433,7 @@ $usuario_lista = $datos_config['usuario_lista'] ?? [];
     </div>
 </div>
 
-<!-- MODAL 5: CONFIRMAR ELIMINACIÓN DE USUARIO -->
+<!-- CONFIRMAR ELIMINACIÓN DE USUARIO -->
 <div class="modal fade" id="modalEliminarUsuario" tabindex="-1" aria-labelledby="modalEliminarUsuarioLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <article class="modal-content border-0 shadow">
