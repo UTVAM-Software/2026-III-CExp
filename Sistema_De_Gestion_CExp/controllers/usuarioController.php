@@ -14,9 +14,10 @@ function obtenerDatosConfiguracion()
     $permisoModel = new permiso($db);
 
     return [
-        // 'usuarios_lista' => $usuarioModel->listarConRolYPermisos(),
+        'usuarios_lista' => $usuarioModel->listarConRolYPermisos(),
         'grupos_lista'    => $grupoModel->listarConTotalUsuarios(),
         'permisos_lista' => $permisoModel->listarTodos(),
+        
     ];
 }
 

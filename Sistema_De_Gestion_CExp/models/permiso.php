@@ -31,9 +31,9 @@ class permiso extends Modelo
     public function obtenerCodenamesPorUsuario($id_grupo)
     {
         $query = "SELECT p.codename
-                  FROM {$this->tabla} p
-                  INNER JOIN tiene t ON p.id_permiso = t.id_permiso
-                  WHERE t.id_grupo = ?";
+                FROM {$this->tabla} p
+                INNER JOIN tiene t ON p.id_permiso = t.id_permiso
+                WHERE t.id_grupo = ?";
         $stmt = $this->ejecutar($query, 'i', [(int)$id_grupo]);
         $resultado = $stmt->get_result();
         $filas = $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
@@ -49,7 +49,7 @@ class permiso extends Modelo
 
         $this->conn->begin_transaction();
         try {
-            $this->ejecutar("DELETE FROM tiene WHERE id_usuario = ?", 'i', [$id_usuario]);
+            $this->ejecutar("DELETE FROM tiene WHERE id_grupo = ?", 'i', [$id_usuario]);
 
             if (!empty($permisos_ids)) {
                 $stmtInsert = $this->conn->prepare("INSERT INTO tiene (id_usuario, id_permiso) VALUES (?, ?)");
