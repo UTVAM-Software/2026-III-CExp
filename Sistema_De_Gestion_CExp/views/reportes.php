@@ -3,6 +3,8 @@ require_once '../config/auth.php';
 require_once '../controllers/reporteController.php';
 $titulo_pagina = 'Reportes y Estadísticas - Consultorio Médico';
 $pagina_activa = 'reportes';
+$cargar_chartjs = true;
+$script_adicional = '../assets/js/reportes.js';
 
 if (!defined('EN_PLANTILLA_BASE')) {
     $vista = __FILE__;
@@ -10,180 +12,130 @@ if (!defined('EN_PLANTILLA_BASE')) {
     return;
 }
 
-$datos_reportes   = obtenerDatosReportes();
-$total_pacientes  = $datos_reportes['total_pacientes'] ?? 0;
-$citas_pendientes = $datos_reportes['citas_pendientes'] ?? 0;
-$total_consultas  = $datos_reportes['total_consultas'] ?? 0;
-$tasa_asistencia  = $datos_reportes['tasa_asistencia'] ?? 0;
-$proximas_citas   = $datos_reportes['proximas_citas'] ?? [];
+$datos = obtenerDatosReportes();
+$proximas_citas = $datos['proximas_citas'] ?? [];
+$tendencia = $datos['tendencia_semestral'] ?? ['etiquetas' => [], 'consultas' => [], 'citas' => []];
+$dias_semana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-$dias_semana = [
-    'Sunday'    => 'Domingo',
-    'Monday'    => 'Lunes',
-    'Tuesday'   => 'Martes',
-    'Wednesday' => 'Miércoles',
-    'Thursday'  => 'Jueves',
-    'Friday'    => 'Viernes',
-    'Saturday'  => 'Sábado'
+$tarjetas_estadisticas = [
+    [
+        'titulo' => 'Pacientes Activos',
+        'valor' => (int) ($datos['total_pacientes'] ?? 0),
+        'icono' => 'bi-people-fill',
+        'estilo_icono' => 'bg-primary-subtle text-primary',
+        'subtitulo' => 'Registrados en expediente',
+        'icono_subtitulo' => 'bi-folder2-open text-primary',
+        'clase_subtitulo' => 'text-secondary fw-medium',
+    ],
+    [
+        'titulo' => 'Citas Pendientes',
+        'valor' => (int) ($datos['citas_pendientes'] ?? 0),
+        'icono' => 'bi-clock-fill',
+        'estilo_icono' => 'bg-warning-subtle text-warning-emphasis',
+        'subtitulo' => 'Programadas y confirmadas',
+        'icono_subtitulo' => 'bi-calendar-event',
+        'clase_subtitulo' => 'text-warning-emphasis fw-semibold',
+    ],
+    [
+        'titulo' => 'Consultas Realizadas',
+        'valor' => (int) ($datos['total_consultas'] ?? 0),
+        'icono' => 'bi-heart-pulse-fill',
+        'estilo_icono' => 'bg-info-subtle text-info-emphasis',
+        'subtitulo' => 'Atenciones médicas registradas',
+        'icono_subtitulo' => 'bi-clipboard2-pulse',
+        'clase_subtitulo' => 'text-info-emphasis fw-medium',
+    ],
+    [
+        'titulo' => 'Tasa de Asistencia',
+        'valor' => ($datos['tasa_asistencia'] ?? 0) . '%',
+        'icono' => 'bi-check-circle-fill',
+        'estilo_icono' => 'bg-success-subtle text-success',
+        'subtitulo' => 'Citas no canceladas vs total',
+        'icono_subtitulo' => 'bi-check2',
+        'clase_subtitulo' => 'text-success fw-semibold',
+    ],
 ];
 ?>
 
-<!-- BARRA SUPERIOR: TÍTULO, BUSCADOR Y BOTÓN NUEVA CITA -->
-<header class="bg-white p-3 px-4 rounded-4 shadow-sm mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+<header
+    class="bg-white p-3 px-4 rounded-4 shadow-sm mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
     <div class="d-flex align-items-center gap-2">
         <i class="bi bi-graph-up text-primary fs-5"></i>
-        <h5 class="fw-bold mb-0 text-dark">REPORTES &amp; ESTADÍSTICAS</h5>
+        <h5 class="fw-bold mb-0 text-dark">Resumen del dia</h5>
         <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis fw-semibold px-3 py-2 ms-2">
             Semana Actual
         </span>
     </div>
 
-    <div class="d-flex align-items-center gap-3">
-        <form action="citas.php" method="GET" class="m-0">
-            <div class="input-group input-group-sm" style="min-width: 230px;">
-                <span class="input-group-text bg-light border-0 rounded-start-pill ps-3">
-                    <i class="bi bi-search text-secondary"></i>
-                </span>
-                <input type="search" name="buscar" id="buscadorDashboard" class="form-control bg-light border-0 rounded-end-pill py-2" placeholder="Buscar paciente o ID...">
-            </div>
-        </form>
+    <div class="d-flex align-items-center gap-2">
         <a href="citas.php" class="btn btn-primary btn-sm rounded-pill fw-semibold px-3 py-2 shadow-sm">
             <i class="bi bi-plus-lg me-1"></i>Nueva Cita
         </a>
     </div>
 </header>
 
-<!-- FILA DE 4 TARJETAS DE INDICADORES (KPIs) -->
+<!-- fila de las tarjetas-->
 <section class="row g-3 mb-4">
-    <!-- Tarjeta 1: Pacientes Activos -->
-    <div class="col-3">
-        <article class="bg-white p-4 rounded-4 shadow-sm h-100 d-flex flex-column justify-content-between">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <span class="text-secondary fw-medium small">Pacientes Activos</span>
-                <span class="rounded-3 d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary" style="width: 38px; height: 38px;">
-                    <i class="bi bi-people-fill fs-5"></i>
-                </span>
-            </div>
-            <h2 class="fw-bold text-dark mb-2"><?= (int)$total_pacientes ?></h2>
-            <small class="text-success fw-semibold">
-                <i class="bi bi-graph-up-arrow me-1"></i>+8.4% este mes
-            </small>
-        </article>
-    </div>
-
-    <!-- Tarjeta 2: Citas Pendientes -->
-    <div class="col-3">
-        <article class="bg-white p-4 rounded-4 shadow-sm h-100 d-flex flex-column justify-content-between">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <span class="text-secondary fw-medium small">Citas Pendientes</span>
-                <span class="rounded-3 d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning-emphasis" style="width: 38px; height: 38px;">
-                    <i class="bi bi-clock-fill fs-5"></i>
-                </span>
-            </div>
-            <h2 class="fw-bold text-dark mb-2"><?= (int)$citas_pendientes ?></h2>
-            <small class="text-warning-emphasis fw-semibold">
-                <i class="bi bi-calendar-event me-1"></i>Próximas 48 horas
-            </small>
-        </article>
-    </div>
-
-    <!-- Tarjeta 3: Consultas este Mes -->
-    <div class="col-3">
-        <article class="bg-white p-4 rounded-4 shadow-sm h-100 d-flex flex-column justify-content-between">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <span class="text-secondary fw-medium small">Consultas este Mes</span>
-                <span class="rounded-3 d-inline-flex align-items-center justify-content-center bg-info-subtle text-info-emphasis" style="width: 38px; height: 38px;">
-                    <i class="bi bi-heart-pulse-fill fs-5"></i>
-                </span>
-            </div>
-            <h2 class="fw-bold text-dark mb-2"><?= (int)$total_consultas ?></h2>
-            <small class="text-success fw-semibold">
-                <i class="bi bi-arrow-up me-1"></i>+12% vs mes anterior
-            </small>
-        </article>
-    </div>
-
-    <!-- Tarjeta 4: Tasa de Asistencia -->
-    <div class="col-3">
-        <article class="bg-white p-4 rounded-4 shadow-sm h-100 d-flex flex-column justify-content-between">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <span class="text-secondary fw-medium small">Tasa de Asistencia</span>
-                <span class="rounded-3 d-inline-flex align-items-center justify-content-center bg-success-subtle text-success" style="width: 38px; height: 38px;">
-                    <i class="bi bi-check-circle-fill fs-5"></i>
-                </span>
-            </div>
-            <h2 class="fw-bold text-dark mb-2"><?= htmlspecialchars((string)$tasa_asistencia) ?>%</h2>
-            <small class="text-success fw-semibold">
-                <i class="bi bi-check2 me-1"></i>Excelente cumplimiento
-            </small>
-        </article>
-    </div>
+    <?php foreach ($tarjetas_estadisticas as $tarjeta): ?>
+        <div class="col-3">
+            <article class="bg-white p-4 rounded-4 shadow-sm h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="text-secondary fw-medium small"><?= $tarjeta['titulo'] ?></span>
+                    <span
+                        class="rounded-3 d-inline-flex align-items-center justify-content-center <?= $tarjeta['estilo_icono'] ?>"
+                        style="width: 38px; height: 38px;">
+                        <i class="bi <?= $tarjeta['icono'] ?> fs-5"></i>
+                    </span>
+                </div>
+                <h2 class="fw-bold text-dark mb-2"><?= htmlspecialchars((string) $tarjeta['valor']) ?></h2>
+                <small class="<?= $tarjeta['clase_subtitulo'] ?>">
+                    <i class="bi <?= $tarjeta['icono_subtitulo'] ?> me-1"></i><?= $tarjeta['subtitulo'] ?>
+                </small>
+            </article>
+        </div>
+    <?php endforeach; ?>
 </section>
 
-<!-- FILA INFERIOR: GRÁFICA DE TENDENCIA Y PRÓXIMAS CITAS -->
+
 <section class="row g-4">
-    <!-- Columna Izquierda: Gráfica de Tendencia -->
+    <!-- aqui se pintan las barras de la grafcua -->
     <div class="col-8">
         <article class="bg-white p-4 rounded-4 shadow-sm h-100 d-flex flex-column justify-content-between">
             <header class="d-flex justify-content-between align-items-start mb-3">
                 <div>
                     <h6 class="fw-bold text-dark mb-1">
-                        <i class="bi bi-graph-up text-primary me-1"></i>Tendencia de Consultas y Nuevos Pacientes
+                        <i class="bi bi-graph-up text-primary me-1"></i>Tendencia de Consultas y Citas Agendadas
                     </h6>
-                    <small class="text-secondary">Comparativa mensual acumulada</small>
+                    <small class="text-secondary">Actividad mensual de los últimos 6 meses</small>
                 </div>
-                <span class="badge bg-light text-dark border px-3 py-2 rounded-3 fw-bold">2026</span>
+                <span class="badge bg-light text-dark border px-3 py-2 rounded-3 fw-bold"><?= date('Y') ?></span>
             </header>
 
-            <!-- Gráfico SVG -->
-            <figure class="my-2 mb-0">
-                <svg viewBox="0 0 650 240" class="w-100" style="overflow: visible;">
-                    <defs>
-                        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#4e73df" stop-opacity="0.16" />
-                            <stop offset="100%" stop-color="#4e73df" stop-opacity="0.02" />
-                        </linearGradient>
-                    </defs>
-
-                    <line x1="20" y1="35"  x2="630" y2="35"  stroke="#f1f4f9" stroke-width="1.5" />
-                    <line x1="20" y1="85"  x2="630" y2="85"  stroke="#f1f4f9" stroke-width="1.5" />
-                    <line x1="20" y1="135" x2="630" y2="135" stroke="#f1f4f9" stroke-width="1.5" />
-                    <line x1="20" y1="185" x2="630" y2="185" stroke="#f1f4f9" stroke-width="1.5" />
-
-                    <polygon points="20,145 135,112 250,132 365,68 480,92 595,40 630,28 630,185 20,185" fill="url(#areaGrad)" />
-
-                    <polyline fill="none" stroke="#a6c1ee" stroke-width="3" stroke-dasharray="4,4"
-                              points="20,175 135,152 250,158 365,120 480,126 595,85 630,74" />
-
-                    <polyline fill="none" stroke="#4e73df" stroke-width="3.5"
-                              points="20,145 135,112 250,132 365,68 480,92 595,40 630,28" />
-
-                    <circle cx="365" cy="68" r="5.5" fill="#4e73df" stroke="#ffffff" stroke-width="2" />
-                    <circle cx="595" cy="40" r="5.5" fill="#4e73df" stroke="#ffffff" stroke-width="2" />
-
-                    <text x="35"  y="218" fill="#6c757d" font-size="12" font-weight="500">Mayo</text>
-                    <text x="145" y="218" fill="#6c757d" font-size="12" font-weight="500">Junio</text>
-                    <text x="260" y="218" fill="#6c757d" font-size="12" font-weight="500">Julio</text>
-                    <text x="370" y="218" fill="#6c757d" font-size="12" font-weight="500">Agosto</text>
-                    <text x="475" y="218" fill="#6c757d" font-size="12" font-weight="500">Septiembre</text>
-                    <text x="585" y="218" fill="#6c757d" font-size="12" font-weight="500">Octubre</text>
-                </svg>
-            </figure>
+            <!-- aqui se esta usando la grafica de chart.js -->
+            <div class="position-relative my-2" style="height: 245px;">
+                <canvas id="graficaTendencia"
+                    data-etiquetas='<?= htmlspecialchars(json_encode($tendencia['etiquetas'], JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>'
+                    data-consultas='<?= htmlspecialchars(json_encode($tendencia['consultas']), ENT_QUOTES, 'UTF-8') ?>'
+                    data-citas='<?= htmlspecialchars(json_encode($tendencia['citas']), ENT_QUOTES, 'UTF-8') ?>'>
+                </canvas>
+            </div>
 
             <footer class="d-flex justify-content-center align-items-center gap-4 pt-2">
                 <div class="d-flex align-items-center gap-2">
-                    <span class="rounded-circle d-inline-block" style="width: 11px; height: 11px; background-color: #4e73df;"></span>
+                    <span class="rounded-circle d-inline-block"
+                        style="width: 11px; height: 11px; background-color: #4e73df;"></span>
                     <small class="text-secondary fw-semibold">Consultas Realizadas</small>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="rounded-circle d-inline-block" style="width: 11px; height: 11px; background-color: #a6c1ee;"></span>
-                    <small class="text-secondary fw-semibold">Nuevos Pacientes</small>
+                    <span class="rounded-circle d-inline-block"
+                        style="width: 11px; height: 11px; background-color: #a6c1ee;"></span>
+                    <small class="text-secondary fw-semibold">Citas Agendadas</small>
                 </div>
             </footer>
         </article>
     </div>
 
-    <!-- Columna Derecha: Próximas Citas -->
+    <!-- priximas citas -->
     <div class="col-4">
         <article class="bg-white p-4 rounded-4 shadow-sm h-100 d-flex flex-column justify-content-between">
             <div>
@@ -192,44 +144,63 @@ $dias_semana = [
                         <i class="bi bi-list-check text-warning me-2"></i>Próximas Citas
                     </h6>
                     <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3 py-1 fw-semibold">
-                        <?= (int)$citas_pendientes ?> Pendientes
+                        <?= (int) ($datos['citas_pendientes'] ?? 0) ?> Pendientes
                     </span>
                 </header>
 
                 <div class="d-flex flex-column gap-3" id="listaProximasCitas">
+
                     <?php if (empty($proximas_citas)): ?>
                         <div class="p-3 rounded-3 bg-light text-center text-secondary small">
                             No hay citas pendientes próximas.
                         </div>
                     <?php else: ?>
-                        <?php foreach ($proximas_citas as $cita):
-                            $ts = strtotime($cita['fecha']);
-                            $dia_ing = date('l', $ts);
-                            $dia_esp = $dias_semana[$dia_ing] ?? $dia_ing;
-                            $hora_fmt = date('h:i A', $ts);
-                            $id_fmt = str_pad((string)$cita['id_cita'], 3, '0', STR_PAD_LEFT);
-                            $nombre_completo = trim($cita['paciente_nombre'] . ' ' . $cita['paciente_apellido']);
 
-                            if ($cita['estado'] === 'confirmada') {
-                                $badge_clase = 'bg-info-subtle text-info-emphasis';
-                                $badge_texto = 'Confirmada';
-                            } else {
-                                $badge_clase = 'bg-warning-subtle text-warning-emphasis';
-                                $badge_texto = 'Pendiente';
-                            }
-                        ?>
-                            <article class="p-3 rounded-3 d-flex justify-content-between align-items-center item-proxima-cita" style="background-color: #f4f6fb;">
-                                <div>
-                                    <h6 class="fw-bold text-dark mb-1" style="font-size: 0.92rem;">
-                                        <?= htmlspecialchars($nombre_completo) ?>
+                        <?php foreach ($proximas_citas as $cita):
+                            $marca_tiempo = strtotime($cita['fecha']);
+                            $es_hoy = (date('Y-m-d', $marca_tiempo) === date('Y-m-d'));
+                            $confirmada = ($cita['estado'] === 'confirmada');
+                            ?>
+
+                            <article
+                                class="p-3 rounded-3 d-flex justify-content-between align-items-center gap-2 item-proxima-cita border <?= $es_hoy ? 'border-primary border-opacity-25' : 'border-light' ?>"
+                                style="background-color: <?= $es_hoy ? '#eef3fe' : '#f4f6fb' ?>;">
+                                <div class="min-w-0">
+                                    <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.92rem;">
+                                        <a href="historial.php?id_paciente=<?= (int) $cita['id_paciente'] ?>"
+                                            class="text-decoration-none text-dark">
+                                            <?= htmlspecialchars(trim($cita['paciente_nombre'] . ' ' . $cita['paciente_apellido'])) ?>
+                                        </a>
                                     </h6>
-                                    <small class="text-secondary" style="font-size: 0.78rem;">
-                                        <?= htmlspecialchars($dia_esp) ?>, <?= htmlspecialchars($hora_fmt) ?> &bull; ID <?= htmlspecialchars($id_fmt) ?>
+                                    <small class="text-secondary d-block" style="font-size: 0.78rem;">
+                                        <?php if ($es_hoy): ?>
+                                            <span class="badge bg-primary text-white rounded-pill me-1">Hoy</span>
+                                        <?php else: ?>
+                                            <?= $dias_semana[(int) date('w', $marca_tiempo)] . ' ' . date('d/m', $marca_tiempo) ?>,
+                                        <?php endif; ?>
+                                        <?= date('h:i A', $marca_tiempo) ?> &bull; ID
+                                        <?= str_pad((string) $cita['id_cita'], 3, '0', STR_PAD_LEFT) ?>
                                     </small>
+
+                                    <?php if (!empty($cita['medico_nombre'])): ?>
+                                        <small class="text-muted d-block text-truncate mt-1" style="font-size: 0.75rem;">
+                                            <i class="bi bi-person-badge me-1"></i><?= htmlspecialchars($cita['medico_nombre']) ?>
+                                        </small>
+                                    <?php endif; ?>
                                 </div>
-                                <span class="badge <?= $badge_clase ?> rounded-2 px-2 py-1 fw-semibold">
-                                    <?= $badge_texto ?>
-                                </span>
+                                <div class="d-flex flex-column align-items-end gap-2 flex-shrink-0">
+                                    <span
+                                        class="badge <?= $confirmada ? 'bg-info-subtle text-info-emphasis' : 'bg-warning-subtle text-warning-emphasis' ?> rounded-2 px-2 py-1 fw-semibold">
+                                        <?= $confirmada ? 'Confirmada' : 'Pendiente' ?>
+                                    </span>
+                                    <?php if (tienePermiso('add_consultation')): ?>
+                                        <a href="consultas.php?id_paciente=<?= (int) $cita['id_paciente'] ?>&id_cita=<?= (int) $cita['id_cita'] ?>"
+                                            class="btn btn-sm btn-outline-primary rounded-pill py-0 px-2"
+                                            style="font-size: 0.75rem;">
+                                            <i class="bi bi-clipboard2-pulse me-1"></i>Atender
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
                             </article>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -237,7 +208,8 @@ $dias_semana = [
             </div>
 
             <footer class="mt-4 pt-2">
-                <a href="citas.php" class="btn btn-light w-100 rounded-3 py-2 fw-bold text-dark border-0" style="background-color: #f4f6fb;">
+                <a href="citas.php" class="btn btn-light w-100 rounded-3 py-2 fw-bold text-dark border-0"
+                    style="background-color: #f4f6fb;">
                     Ir al Calendario Completo <i class="bi bi-arrow-right ms-1"></i>
                 </a>
             </footer>

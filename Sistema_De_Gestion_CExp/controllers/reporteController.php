@@ -10,11 +10,12 @@ function obtenerDatosReportes()
     $reporteModel = new reporte($db);
 
     return [
-        'total_pacientes'  => $reporteModel->contarPacientes(),
-        'citas_pendientes' => $reporteModel->contarCitasPendientes(),
-        'total_consultas'  => $reporteModel->contarConsultas(),
-        'tasa_asistencia'  => $reporteModel->calcularTasaAsistencia(),
-        'proximas_citas'   => $reporteModel->obtenerProximasCitas(4),
+        'total_pacientes'     => $reporteModel->contarPacientes(),
+        'citas_pendientes'    => $reporteModel->contarCitasPendientes(),
+        'total_consultas'     => $reporteModel->contarConsultas(),
+        'tasa_asistencia'     => $reporteModel->calcularTasaAsistencia(),
+        'proximas_citas'      => $reporteModel->obtenerProximasCitas(4),
+        'tendencia_semestral' => $reporteModel->obtenerTendenciaSemestral(6),
     ];
 }
 ?>
