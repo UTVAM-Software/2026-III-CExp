@@ -21,6 +21,9 @@ if (!defined('EN_PLANTILLA_BASE')) {
     <?php if (!empty($cargar_fullcalendar)): ?>
         <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <?php endif; ?>
+    <?php if (!empty($cargar_chartjs)): ?>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <?php endif; ?>
 </head>
 
 <body class="bg-light">
