@@ -29,6 +29,34 @@ if (basename($_SERVER['PHP_SELF']) === 'usuarioController.php') {
     $permisoModel = new permiso($db);
 
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
+        verificarCsrf();
+
+        if (isset($_POST['accion'])) {
+            $accion = $_POST['accion'];
+            $id     = (int)($_POST['id'] ?? 0);
+            try {
+                if ($accion === 'eliminar' && $id === (int)$_SESSION['id_usuario']) {
+                    header("Location: ../views/configuracion.php?error=" . urlencode("No puedes eliminar tu propia cuenta."));
+                } elseif ($accion === 'eliminar_rol' && $id === 1) {
+                    header("Location: ../views/configuracion.php?error=" . urlencode("No se puede eliminar el rol Administrador."));
+                } elseif ($id > 0 && $accion === 'eliminar') {
+                    $usuarioModel->delete($id);
+                    header("Location: ../views/configuracion.php?mensaje=" . urlencode("Usuario eliminado."));
+                } elseif ($id > 0 && $accion === 'eliminar_rol') {
+                    $grupoModel->delete($id);
+                    header("Location: ../views/configuracion.php?mensaje=" . urlencode("Rol eliminado."));
+                } elseif ($id > 0 && $accion === 'eliminar_permiso') {
+                    $permisoModel->delete($id);
+                    header("Location: ../views/configuracion.php?mensaje=" . urlencode("Permiso eliminado."));
+                } else {
+                    header("Location: ../views/configuracion.php");
+                }
+            } catch (mysqli_sql_exception $e) {
+                header("Location: ../views/configuracion.php?error=" . urlencode("No se pudo eliminar: el registro tiene datos relacionados."));
+            }
+            exit();
+        }
+
         $tipo = $_POST['tipo_formulario'] ?? 'usuario';
 
         try {
@@ -116,27 +144,6 @@ if (basename($_SERVER['PHP_SELF']) === 'usuarioController.php') {
             }
         }
         exit();
-    }
-
-    if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['accion'])) {
-        $accion = $_GET['accion'];
-        $id     = (int)($_GET['id'] ?? 0);
-
-        if ($id > 0) {
-            if ($accion === 'eliminar') {
-                $usuarioModel->delete($id);
-                header("Location: ../views/configuracion.php?mensaje=" . urlencode("Usuario eliminado."));
-                exit();
-            } elseif ($accion === 'eliminar_rol') {
-                $grupoModel->delete($id);
-                header("Location: ../views/configuracion.php?mensaje=" . urlencode("Rol eliminado."));
-                exit();
-            } elseif ($accion === 'eliminar_permiso') {
-                $permisoModel->delete($id);
-                header("Location: ../views/configuracion.php?mensaje=" . urlencode("Permiso eliminado."));
-                exit();
-            }
-        }
     }
 
     header("Location: ../views/configuracion.php");

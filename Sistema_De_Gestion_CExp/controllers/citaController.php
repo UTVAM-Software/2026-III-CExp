@@ -75,6 +75,20 @@ if (basename($_SERVER['PHP_SELF']) === 'citaController.php') {
     $estados_validos = ['programada', 'confirmada', 'concluida', 'cancelada'];
 
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
+        verificarCsrf();
+        requerirPermiso('add_date', '../views/citas.php');
+
+        if (($_POST['accion'] ?? '') === 'eliminar') {
+            $id_cita = (int)($_POST['id'] ?? 0);
+            if ($id_cita > 0) {
+                $citaModel->delete($id_cita);
+                header("Location: ../views/citas.php?mensaje=" . urlencode("Cita eliminada correctamente."));
+            } else {
+                header("Location: ../views/citas.php");
+            }
+            exit();
+        }
+
         $id_cita     = (int)($_POST['id_cita'] ?? 0);
         $id_paciente = (int)($_POST['id_paciente'] ?? 0);
         $fecha_raw   = trim($_POST['fecha'] ?? '');
@@ -111,15 +125,6 @@ if (basename($_SERVER['PHP_SELF']) === 'citaController.php') {
             header("Location: {$destinoBase}?{$extraQuery}error=" . urlencode("No se pudo guardar la cita."));
         }
         exit();
-    }
-
-    if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['accion'])) {
-        if ($_GET['accion'] === 'eliminar' && !empty($_GET['id'])) {
-            $id_cita = (int)$_GET['id'];
-            $citaModel->delete($id_cita);
-            header("Location: ../views/citas.php?mensaje=" . urlencode("Cita eliminada correctamente."));
-            exit();
-        }
     }
 
     header("Location: ../views/citas.php");

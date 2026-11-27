@@ -45,7 +45,7 @@ class permiso extends Modelo
         $id_grupo = (int)$id_grupo;
         if ($id_grupo <= 0) {
             return false;
-        }   
+        }
 
         $this->conn->begin_transaction();
         try {

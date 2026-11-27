@@ -2,7 +2,6 @@
 require_once '../config/auth.php';
 require_once '../controllers/citaController.php';
 $titulo_pagina = 'Citas - Consultorio Médico';
-// requerirPermiso('add_date');
 $pagina_activa = 'citas';
 $cargar_fullcalendar = true;
 $script_adicional = '../assets/js/calendario.js';
@@ -181,6 +180,7 @@ $eventos_citas       = $datos_citas['eventos_citas'] ?? [];
 <div class="modal fade" id="modalCita" tabindex="-1" aria-labelledby="modalCitaLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form class="modal-content border-0 shadow" action="../controllers/citaController.php" method="POST">
+            <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
             <header class="modal-header bg-primary-subtle border-0">
                 <h5 class="modal-title fw-bold text-primary-emphasis" id="modalCitaLabel">
                     <i class="bi bi-calendar-plus me-2"></i>Agendar / Editar Cita
@@ -247,9 +247,14 @@ $eventos_citas       = $datos_citas['eventos_citas'] ?? [];
 
             <footer class="modal-footer border-0 pt-0 px-4 pb-4 justify-content-center">
                 <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Cancelar</button>
-                <a href="#" id="btnConfirmarEliminar" class="btn btn-danger rounded-3 px-4 fw-semibold">
-                    <i class="bi bi-trash me-1"></i>Sí, eliminar
-                </a>
+                <form method="POST" action="../controllers/citaController.php" class="d-inline">
+                    <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
+                    <input type="hidden" name="accion" value="eliminar">
+                    <input type="hidden" name="id" id="idCitaEliminar" value="">
+                    <button type="submit" class="btn btn-danger rounded-3 px-4 fw-semibold">
+                        <i class="bi bi-trash me-1"></i>Sí, eliminar
+                    </button>
+                </form>
             </footer>
         </article>
     </div>
