@@ -54,6 +54,46 @@ class GestorModales {
                     modalHistorialDiagnostico: `Diagnóstico: ${d.diagnostico}`
                 });
                 this.llenarTabla('modalHistorialDetalles', d.detalles, colsReceta);
+            },
+
+            modalUsuario: (d) => {
+                this.valores({
+                    id_usuario: d.id,
+                    nombre_completo: d.nombre,
+                    username: d.username,
+                    email: d.email,
+                    id_grupo: d.grupo,
+                    estado_usuario: d.estado || 'activo',
+                    contrasena: ''
+                });
+                const pass = document.getElementById('contrasena');
+                if (pass) pass.required = !d.id;
+            },
+
+            modalAsignarPermisos: (d) => {
+                this.valores({ permisos_id_grupo: d.grupo });
+                this.textos({ permisos_nombre_rol: d.rol });
+                const activos = this.parseJson(d.permisos);
+                document.querySelectorAll('.check-permiso-usuario').forEach(chk => {
+                    chk.checked = activos.includes(parseInt(chk.value, 10));
+                });
+            },
+
+            modalRol: (d) => {
+                this.valores({ id_grupo_modal: d.id, nombre_grupo: d.nombre });
+            },
+
+            modalPermiso: (d) => {
+                this.valores({
+                    id_permiso_modal: d.id,
+                    nombre_permiso: d.nombre,
+                    codename_permiso: d.codename
+                });
+            },
+
+            modalEliminarUsuario: (d) => {
+                this.valores({ idUsuarioEliminar: d.id });
+                this.textos({ nombreUsuarioEliminar: d.nombre });
             }
         };
     }
@@ -165,6 +205,16 @@ class AppConsultorio {
     }
 
     iniciarFiltrosTablas() {
+        new FiltroTabla({
+            tablaId: 'tablaUsuarios',
+            buscarId: 'filtroBuscarUsuario',
+            selectIds: ['filtroRolUsuario', 'filtroEstadoUsuario'],
+            coincide: (fila, txt, [rol, est]) =>
+                (!txt || fila.textContent.toLowerCase().includes(txt)) &&
+                (!rol || (fila.dataset.rol || '').toLowerCase().trim() === rol) &&
+                (!est || (fila.dataset.estado || '').toLowerCase().trim() === est)
+        });
+
         new FiltroTabla({
             tablaId: 'tablaPacientes',
             buscarId: 'filtroBuscarPaciente',

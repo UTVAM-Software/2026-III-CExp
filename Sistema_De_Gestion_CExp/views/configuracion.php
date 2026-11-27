@@ -4,7 +4,6 @@ require_once '../controllers/usuarioController.php';
 
 $titulo_pagina = 'Configuración - Consultorio Médico';
 $pagina_activa = 'configuracion';
-$script_adicional = '../assets/js/configuracion.js';
 
 if (!defined('EN_PLANTILLA_BASE')) {
     $vista = __FILE__;
@@ -14,23 +13,24 @@ if (!defined('EN_PLANTILLA_BASE')) {
 
 $datos_config   = obtenerDatosConfiguracion();
 $permisos_lista = $datos_config['permisos_lista'] ?? [];
-$grupos_lista = $datos_config['grupos_lista'] ?? [];
+$grupos_lista   = $datos_config['grupos_lista'] ?? [];
 $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
+
+$pestanas = [
+    ['id' => 'tab-usuarios-btn', 'target' => 'tabUsuarios', 'icono' => 'bi-people',      'titulo' => '1. Usuarios',        'activa' => true],
+    ['id' => 'tab-roles-btn',    'target' => 'tabRoles',    'icono' => 'bi-shield-lock', 'titulo' => '2. Perfiles / Roles', 'activa' => false],
+    ['id' => 'tab-permisos-btn', 'target' => 'tabPermisos', 'icono' => 'bi-key',         'titulo' => '3. Permisos',        'activa' => false],
+];
 ?>
 
-<?php if (!empty($_GET['mensaje'])): ?>
-    <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($_GET['mensaje']) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-    </div>
-<?php endif; ?>
-
-<?php if (!empty($_GET['error'])): ?>
-    <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($_GET['error']) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-    </div>
-<?php endif; ?>
+<?php foreach (['mensaje' => ['success', 'check-circle-fill'], 'error' => ['danger', 'exclamation-triangle-fill']] as $clave => [$color, $icono]):
+    if (!empty($_GET[$clave])): ?>
+        <div class="alert alert-<?= $color ?> alert-dismissible fade show rounded-3" role="alert">
+            <i class="bi bi-<?= $icono ?> me-2"></i><?= htmlspecialchars($_GET[$clave]) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    <?php endif;
+endforeach; ?>
 
 <section class="bg-white p-4 rounded-4 shadow-sm mb-4">
     <header class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
@@ -44,21 +44,15 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
 
     <!-- NAVEGACIÓN POR PESTAÑAS -->
     <ul class="nav nav-tabs mb-4" id="tabsConfiguracion" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active fw-semibold" id="tab-usuarios-btn" data-bs-toggle="tab" data-bs-target="#tabUsuarios" type="button" role="tab" aria-controls="tabUsuarios" aria-selected="true">
-                <i class="bi bi-people me-1"></i>1. Usuarios
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link fw-semibold" id="tab-roles-btn" data-bs-toggle="tab" data-bs-target="#tabRoles" type="button" role="tab" aria-controls="tabRoles" aria-selected="false">
-                <i class="bi bi-shield-lock me-1"></i>2. Perfiles / Roles
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link fw-semibold" id="tab-permisos-btn" data-bs-toggle="tab" data-bs-target="#tabPermisos" type="button" role="tab" aria-controls="tabPermisos" aria-selected="false">
-                <i class="bi bi-key me-1"></i>3. Permisos
-            </button>
-        </li>
+        <?php foreach ($pestanas as $tab): ?>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold <?= $tab['activa'] ? 'active' : '' ?>" id="<?= $tab['id'] ?>"
+                    data-bs-toggle="tab" data-bs-target="#<?= $tab['target'] ?>" type="button" role="tab"
+                    aria-controls="<?= $tab['target'] ?>" aria-selected="<?= $tab['activa'] ? 'true' : 'false' ?>">
+                    <i class="bi <?= $tab['icono'] ?> me-1"></i><?= $tab['titulo'] ?>
+                </button>
+            </li>
+        <?php endforeach; ?>
     </ul>
 
     <!-- CONTENIDO DE LAS PESTAÑAS -->
@@ -77,7 +71,7 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
                 <div class="col-auto">
                     <select id="filtroRolUsuario" class="form-select form-select-sm">
                         <option value="">Todos los roles</option>
-                        <?php foreach ($permisos_lista as $r): ?>
+                        <?php foreach ($grupos_lista as $r): ?>
                             <option value="<?= htmlspecialchars($r['nombre']) ?>"><?= htmlspecialchars($r['nombre']) ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -98,9 +92,9 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
                 </div>
             </form>
 
-            <div class="table-responsive">
+            <div class="table-responsive" style="max-height: 460px; overflow-y: auto;">
                 <table class="table table-hover align-middle mb-0" id="tablaUsuarios">
-                    <thead class="table-primary">
+                    <thead class="table-primary sticky-top" style="z-index: 2;">
                         <tr>
                             <th scope="col" class="ps-3">ID</th>
                             <th scope="col">Nombre Completo</th>
