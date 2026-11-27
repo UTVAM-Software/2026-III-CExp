@@ -35,13 +35,44 @@ class Modelo
         return $stmt;
     }
 
+    /**
+     * Ejecuta una consulta SELECT y devuelve todas las filas.
+     */
+    protected function obtenerTodos($sql, $types = '', $params = [])
+    {
+        $resultado = $this->ejecutar($sql, $types, $params)->get_result();
+        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+    }
+
+    /**
+     * Ejecuta una consulta SELECT y devuelve una sola fila o null.
+     */
+    protected function obtenerUno($sql, $types = '', $params = [])
+    {
+        $resultado = $this->ejecutar($sql, $types, $params)->get_result();
+        return $resultado ? $resultado->fetch_assoc() : null;
+    }
+
+    /**
+     * Ejecuta una operación dentro de una transacción segura.
+     */
+    protected function transaccion(callable $operacion)
+    {
+        $this->conn->begin_transaction();
+        try {
+            $resultado = $operacion();
+            $this->conn->commit();
+            return $resultado;
+        } catch (Throwable $e) {
+            $this->conn->rollback();
+            throw $e;
+        }
+    }
+
     // Obtiene todos los registros de la tabla asociada.
     public function all()
     {
-        $sql = "SELECT * FROM {$this->tabla}";
-        $stmt = $this->ejecutar($sql);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+        return $this->obtenerTodos("SELECT * FROM {$this->tabla}");
     }
 
     /**
@@ -49,10 +80,7 @@ class Modelo
      */
     public function get($id)
     {
-        $sql = "SELECT * FROM {$this->tabla} WHERE {$this->pk} = ? LIMIT 1";
-        $stmt = $this->ejecutar($sql, 'i', [(int)$id]);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_assoc() : null;
+        return $this->obtenerUno("SELECT * FROM {$this->tabla} WHERE {$this->pk} = ? LIMIT 1", 'i', [(int)$id]);
     }
 
     /**

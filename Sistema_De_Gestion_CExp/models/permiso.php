@@ -8,10 +8,7 @@ class permiso extends Modelo
 
     public function listarTodos()
     {
-        $sql = "SELECT id_permiso, nombre, codename FROM {$this->tabla} ORDER BY id_permiso ASC";
-        $stmt = $this->ejecutar($sql);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+        return $this->obtenerTodos("SELECT id_permiso, nombre, codename FROM {$this->tabla} ORDER BY id_permiso ASC");
     }
 
     public function obtenerCodenamesPorUsuario($id_grupo)
@@ -20,9 +17,7 @@ class permiso extends Modelo
                 FROM {$this->tabla} p
                 INNER JOIN tiene t ON p.id_permiso = t.id_permiso
                 WHERE t.id_grupo = ?";
-        $stmt = $this->ejecutar($query, 'i', [(int)$id_grupo]);
-        $resultado = $stmt->get_result();
-        $filas = $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+        $filas = $this->obtenerTodos($query, 'i', [(int)$id_grupo]);
         return array_column($filas, 'codename');
     }
 
@@ -38,27 +33,22 @@ class permiso extends Modelo
             fn($id) => $id > 0
         )));
 
-        $this->conn->begin_transaction();
-        try {
+        return $this->transaccion(function () use ($id_grupo, $ids_validos) {
             $this->ejecutar("DELETE FROM tiene WHERE id_grupo = ?", 'i', [$id_grupo]);
 
             if (!empty($ids_validos)) {
-                $stmtInsert = $this->conn->prepare("INSERT INTO tiene (id_grupo, id_permiso) VALUES (?, ?)");
-                if (!$stmtInsert) {
+                $stmt = $this->conn->prepare("INSERT INTO tiene (id_grupo, id_permiso) VALUES (?, ?)");
+                if (!$stmt) {
                     throw new RuntimeException("Error al preparar inserción de permisos: " . $this->conn->error);
                 }
 
                 foreach ($ids_validos as $id_permiso) {
-                    $stmtInsert->bind_param('ii', $id_grupo, $id_permiso);
-                    $stmtInsert->execute();
+                    $stmt->bind_param('ii', $id_grupo, $id_permiso);
+                    $stmt->execute();
                 }
             }
 
-            $this->conn->commit();
             return true;
-        } catch (Throwable $e) {
-            $this->conn->rollback();
-            throw $e;
-        }
+        });
     }
 }

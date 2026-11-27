@@ -15,23 +15,23 @@ if (!defined('EN_PLANTILLA_BASE')) {
 $datos_citas         = obtenerDatosCitas();
 $medicos             = $datos_citas['medicos'] ?? [];
 $pacientes_recientes = $datos_citas['pacientes_recientes'] ?? [];
-$citas_bd            = $datos_citas['citas_bd'] ?? [];
 $eventos_citas       = $datos_citas['eventos_citas'] ?? [];
+$estados_cita        = [
+    'programada' => 'bg-warning-subtle text-warning-emphasis',
+    'confirmada' => 'bg-primary-subtle text-primary-emphasis',
+    'concluida'  => 'bg-success-subtle text-success-emphasis',
+    'cancelada'  => 'bg-danger-subtle text-danger-emphasis',
+];
 ?>
 
-<?php if (!empty($_GET['mensaje'])): ?>
-    <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($_GET['mensaje']) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-    </div>
-<?php endif; ?>
-
-<?php if (!empty($_GET['error'])): ?>
-    <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($_GET['error']) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-    </div>
-<?php endif; ?>
+<?php foreach (['mensaje' => ['success', 'check-circle-fill'], 'error' => ['danger', 'exclamation-triangle-fill']] as $clave => [$color, $icono]):
+    if (!empty($_GET[$clave])): ?>
+        <div class="alert alert-<?= $color ?> alert-dismissible fade show rounded-3" role="alert">
+            <i class="bi bi-<?= $icono ?> me-2"></i><?= htmlspecialchars($_GET[$clave]) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    <?php endif;
+endforeach; ?>
 
 <!-- SECCIÓN PRINCIPAL DE CITAS -->
 <section class="bg-white p-4 rounded-4 shadow-sm mb-4">
@@ -42,9 +42,11 @@ $eventos_citas       = $datos_citas['eventos_citas'] ?? [];
             </h4>
             <p class="text-muted small mb-0">Agenda, filtra y administra las citas médicas en vista de lista o calendario.</p>
         </div>
-        <button type="button" class="btn btn-primary fw-semibold px-3 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalCita">
-            <i class="bi bi-plus-lg me-1"></i>Nueva cita
-        </button>
+        <?php if (tienePermiso('add_date')): ?>
+            <button type="button" class="btn btn-primary fw-semibold px-3 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalCita">
+                <i class="bi bi-plus-lg me-1"></i>Nueva cita
+            </button>
+        <?php endif; ?>
     </header>
 
     <!-- Barra de Filtros y Selector -->
@@ -72,24 +74,20 @@ $eventos_citas       = $datos_citas['eventos_citas'] ?? [];
         <div class="col-auto">
             <select id="filtroEstado" name="estado" class="form-select form-select-sm">
                 <option value="">Todos los estados</option>
-                <option value="programada">Programada</option>
-                <option value="confirmada">Confirmada</option>
-                <option value="concluida">Concluida</option>
-                <option value="cancelada">Cancelada</option>
+                <?php foreach (array_keys($estados_cita) as $clave_estado): ?>
+                    <option value="<?= $clave_estado ?>"><?= ucfirst($clave_estado) ?></option>
+                <?php endforeach; ?>
             </select>
         </div>
 
         <div class="col-auto">
-            <input type="date" id="filtroFechaInicio" name="fecha_inicio" class="form-control form-control-sm" aria-label="Fecha desde">
-        </div>
-        <div class="col-auto">
-            <input type="date" id="filtroFechaFin" name="fecha_fin" class="form-control form-control-sm" aria-label="Fecha hasta">
+            <input type="date" id="filtroFecha" name="fecha" class="form-control form-control-sm" aria-label="Filtrar por fecha">
         </div>
 
         <div class="col">
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                <input type="search" id="filtroPaciente" name="buscar" class="form-control border-start-0" placeholder="Buscar paciente..." value="<?= htmlspecialchars($_GET['buscar'] ?? '') ?>">
+                <input type="search" id="filtroPaciente" name="buscar" class="form-control border-start-0" placeholder="Buscar por ID o paciente..." value="<?= htmlspecialchars($_GET['buscar'] ?? '') ?>">
             </div>
         </div>
     </form>
@@ -116,9 +114,9 @@ $eventos_citas       = $datos_citas['eventos_citas'] ?? [];
     <div id="calendar" class="d-none" data-eventos='<?= htmlspecialchars(json_encode($eventos_citas, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>'></div>
 
     <!-- Contenedor de Lista -->
-    <div id="vistaListaCitas" class="table-responsive">
+    <div id="vistaListaCitas" class="table-responsive" style="max-height: 540px; overflow-y: auto;">
         <table class="table table-hover align-middle mb-0">
-            <thead class="table-primary">
+            <thead class="table-primary sticky-top" style="z-index: 2;">
                 <tr>
                     <th scope="col" class="ps-3">ID</th>
                     <th scope="col">Paciente</th>
@@ -136,37 +134,38 @@ $eventos_citas       = $datos_citas['eventos_citas'] ?? [];
                 <?php else: ?>
                     <?php foreach ($eventos_citas as $ev):
                         $est = $ev['extendedProps']['estado'];
-                        $badgeMap = [
-                            'concluida'  => 'bg-success-subtle text-success-emphasis',
-                            'confirmada' => 'bg-primary-subtle text-primary-emphasis',
-                            'programada' => 'bg-warning-subtle text-warning-emphasis',
-                            'cancelada'  => 'bg-danger-subtle text-danger-emphasis'
-                        ];
-                        $badgeClase = $badgeMap[$est] ?? 'bg-secondary-subtle';
+                        $badgeClase = $estados_cita[$est] ?? 'bg-secondary-subtle';
                     ?>
-                        <tr>
+                        <tr data-id="<?= (int)$ev['id'] ?>"
+                            data-id-paciente="<?= (int)$ev['extendedProps']['id_paciente'] ?>"
+                            data-medico="<?= (int)$ev['extendedProps']['id_medico'] ?>"
+                            data-estado="<?= htmlspecialchars($est) ?>"
+                            data-fecha="<?= htmlspecialchars(substr($ev['start'], 0, 10)) ?>"
+                            data-paciente="<?= htmlspecialchars(strtolower($ev['title'])) ?>">
                             <td class="ps-3 fw-medium text-secondary">#<?= (int)$ev['id'] ?></td>
                             <td class="fw-semibold"><?= htmlspecialchars($ev['title']) ?></td>
                             <td class="text-secondary small"><?= htmlspecialchars($ev['extendedProps']['medico']) ?></td>
                             <td><time><?= date('d/m/Y H:i', strtotime($ev['start'])) ?></time></td>
                             <td><span class="badge <?= $badgeClase ?>"><?= ucfirst(htmlspecialchars($est)) ?></span></td>
                             <td class="text-end pe-3">
-                                <button type="button" class="btn btn-outline-primary btn-sm rounded-3 me-1"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalCita"
-                                    data-id="<?= (int)$ev['id'] ?>"
-                                    data-paciente="<?= (int)$ev['extendedProps']['id_paciente'] ?>"
-                                    data-fecha="<?= htmlspecialchars(substr($ev['start'], 0, 16)) ?>"
-                                    data-estado="<?= htmlspecialchars($est) ?>">
-                                    <i class="bi bi-pencil"></i> Editar
-                                </button>
-                                <button type="button" class="btn btn-outline-danger btn-sm rounded-3"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalEliminarCita"
-                                    data-id="<?= (int)$ev['id'] ?>"
-                                    data-paciente="<?= htmlspecialchars($ev['title']) ?>">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                                <?php if (tienePermiso('add_date')): ?>
+                                    <button type="button" class="btn btn-outline-primary btn-sm rounded-3 me-1"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalCita"
+                                        data-id="<?= (int)$ev['id'] ?>"
+                                        data-paciente="<?= (int)$ev['extendedProps']['id_paciente'] ?>"
+                                        data-fecha="<?= htmlspecialchars(substr($ev['start'], 0, 16)) ?>"
+                                        data-estado="<?= htmlspecialchars($est) ?>">
+                                        <i class="bi bi-pencil"></i> Editar
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-3"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalEliminarCita"
+                                        data-id="<?= (int)$ev['id'] ?>"
+                                        data-paciente="<?= htmlspecialchars($ev['title']) ?>">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -211,10 +210,9 @@ $eventos_citas       = $datos_citas['eventos_citas'] ?? [];
                 <div class="mb-2">
                     <label for="estado" class="form-label fw-semibold small">Estado de la cita</label>
                     <select name="estado" id="estado" class="form-select" required>
-                        <option value="programada">Programada</option>
-                        <option value="confirmada">Confirmada</option>
-                        <option value="concluida">Concluida</option>
-                        <option value="cancelada">Cancelada</option>
+                        <?php foreach (array_keys($estados_cita) as $clave_estado): ?>
+                            <option value="<?= $clave_estado ?>"><?= ucfirst($clave_estado) ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
             </div>

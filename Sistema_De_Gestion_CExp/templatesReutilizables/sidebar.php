@@ -59,7 +59,7 @@ $rol_usuario_sesion    = $_SESSION['nombre_grupo'] ?? 'Médico General';
             </a>
         <?php endif; ?>
 
-        <?php if ((int)($_SESSION['id_grupo'] ?? 0) === 1): ?>
+        <?php if ((function_exists('tienePermiso') && tienePermiso('add_roles')) || (int)($_SESSION['id_grupo'] ?? 0) === 1): ?>
             <a href="configuracion.php" class="nav-link sidebar-item d-flex align-items-center p-3 <?= ($pagina_activa === 'configuracion') ? 'active' : '' ?>">
                 <i class="bi bi-gear me-2"></i>
                 <span class="fw-bold">Configuración</span>

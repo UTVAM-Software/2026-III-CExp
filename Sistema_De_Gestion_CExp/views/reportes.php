@@ -67,11 +67,13 @@ $tarjetas_estadisticas = [
         </span>
     </div>
 
-    <div class="d-flex align-items-center gap-2">
-        <a href="citas.php" class="btn btn-primary btn-sm rounded-pill fw-semibold px-3 py-2 shadow-sm">
-            <i class="bi bi-plus-lg me-1"></i>Nueva Cita
-        </a>
-    </div>
+    <?php if (tienePermiso('add_date')): ?>
+        <div class="d-flex align-items-center gap-2">
+            <a href="citas.php" class="btn btn-primary btn-sm rounded-pill fw-semibold px-3 py-2 shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i>Nueva Cita
+            </a>
+        </div>
+    <?php endif; ?>
 </header>
 
 <!-- fila de las tarjetas-->

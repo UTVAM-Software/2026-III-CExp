@@ -5,7 +5,6 @@ require_once '../controllers/usuarioController.php';
 
 $titulo_pagina = 'Configuración - Consultorio Médico';
 $pagina_activa = 'configuracion';
-$script_adicional = '../assets/js/configuracion.js';
 
 if (!defined('EN_PLANTILLA_BASE')) {
     $vista = __FILE__;

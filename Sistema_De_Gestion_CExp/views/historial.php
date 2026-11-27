@@ -18,19 +18,14 @@ $antecedentes_paciente    = $datos_historial['antecedentes_paciente'] ?? [];
 $historial_consultas      = $datos_historial['historial_consultas'] ?? [];
 ?>
 
-<?php if (!empty($_GET['mensaje'])): ?>
-    <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($_GET['mensaje']) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-    </div>
-<?php endif; ?>
-
-<?php if (!empty($_GET['error'])): ?>
-    <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($_GET['error']) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-    </div>
-<?php endif; ?>
+<?php foreach (['mensaje' => ['success', 'check-circle-fill'], 'error' => ['danger', 'exclamation-triangle-fill']] as $clave => [$color, $icono]):
+    if (!empty($_GET[$clave])): ?>
+        <div class="alert alert-<?= $color ?> alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+            <i class="bi bi-<?= $icono ?> me-2"></i><?= htmlspecialchars($_GET[$clave]) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    <?php endif;
+endforeach; ?>
 
 <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
@@ -38,18 +33,15 @@ $historial_consultas      = $datos_historial['historial_consultas'] ?? [];
         <p class="text-muted small mb-0">Consulta de antecedentes médicos, alergias y consultas previas</p>
     </div>
 
-    <!-- Selector de paciente -->
-    <form method="GET" action="historial.php" class="d-flex gap-2">
-        <select name="id_paciente" class="form-select form-select-sm rounded-pill px-3" required>
+    <!-- Selector dinámico de paciente (auto-envío al cambiar) -->
+    <form method="GET" action="historial.php" class="d-flex">
+        <select name="id_paciente" id="selectPacienteHistorial" class="form-select form-select-sm rounded-pill px-3" aria-label="Seleccionar paciente" onchange="this.form.submit()">
             <?php foreach ($pacientes_lista as $pac): ?>
                 <option value="<?= (int)$pac['id_paciente'] ?>" <?= ((int)$pac['id_paciente'] === $id_paciente_seleccionado) ? 'selected' : '' ?>>
                     <?= htmlspecialchars(trim($pac['nombre'] . ' ' . $pac['apellido_paterno'] . ' ' . $pac['apellido_materno'])) ?>
                 </option>
             <?php endforeach; ?>
         </select>
-        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">
-            <i class="bi bi-search me-1"></i> Consultar
-        </button>
     </form>
 </header>
 
@@ -77,7 +69,7 @@ $historial_consultas      = $datos_historial['historial_consultas'] ?? [];
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-telephone text-primary me-2"></i>
-                        <strong>Contacto:</strong> <?= htmlspecialchars($paciente_actual['contacto']) ?>
+                        <strong>Contacto:</strong> <?= htmlspecialchars(($paciente_actual['contacto'] ?? '') !== '' ? $paciente_actual['contacto'] : 'No registrado') ?>
                     </li>
                 </ul>
 
@@ -104,25 +96,29 @@ $historial_consultas      = $datos_historial['historial_consultas'] ?? [];
                 <?php if (empty($antecedentes_paciente)): ?>
                     <p class="text-muted small mb-0">No hay notas de antecedentes registradas para este paciente.</p>
                 <?php else: ?>
-                    <?php foreach ($antecedentes_paciente as $ant): ?>
-                        <article class="p-3 rounded-3 bg-light mb-2 small">
-                            <?= nl2br(htmlspecialchars($ant['notas'])) ?>
-                        </article>
-                    <?php endforeach; ?>
+                    <div style="max-height: 180px; overflow-y: auto;">
+                        <?php foreach ($antecedentes_paciente as $ant): ?>
+                            <article class="p-3 rounded-3 bg-light mb-2 small">
+                                <?= nl2br(htmlspecialchars($ant['notas'])) ?>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
                 <?php endif; ?>
 
-                <hr class="my-3">
-                <form action="../controllers/pacienteController.php" method="POST">
-                    <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
-                    <input type="hidden" name="tipo_formulario" value="antecedentes">
-                    <input type="hidden" name="origen" value="historial">
-                    <input type="hidden" name="id_paciente" value="<?= (int)$paciente_actual['id_paciente'] ?>">
-                    <label for="notas" class="form-label small fw-semibold">Agregar nota de antecedentes</label>
-                    <div class="input-group">
-                        <input type="text" id="notas" name="notas" class="form-control form-control-sm" placeholder="Ej. Cirugía previa, padecimiento crónico..." required>
-                        <button type="submit" class="btn btn-outline-primary btn-sm">Guardar</button>
-                    </div>
-                </form>
+                <?php if (tienePermiso('change_patient')): ?>
+                    <hr class="my-3">
+                    <form action="../controllers/pacienteController.php" method="POST">
+                        <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
+                        <input type="hidden" name="tipo_formulario" value="antecedentes">
+                        <input type="hidden" name="origen" value="historial">
+                        <input type="hidden" name="id_paciente" value="<?= (int)$paciente_actual['id_paciente'] ?>">
+                        <label for="notas" class="form-label small fw-semibold">Agregar nota de antecedentes</label>
+                        <div class="input-group">
+                            <input type="text" id="notas" name="notas" class="form-control form-control-sm" placeholder="Ej. Cirugía previa, padecimiento crónico..." required>
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Guardar</button>
+                        </div>
+                    </form>
+                <?php endif; ?>
             </section>
         </div>
     </section>
@@ -133,13 +129,15 @@ $historial_consultas      = $datos_historial['historial_consultas'] ?? [];
             <h6 class="fw-bold mb-0" style="color: #0d1b3e;">
                 <i class="bi bi-journal-text text-primary me-2"></i>Consultas Previas
             </h6>
-            <a href="consultas.php?id_paciente=<?= (int)$paciente_actual['id_paciente'] ?>" class="btn btn-primary btn-sm rounded-pill px-3">
-                <i class="bi bi-plus-lg me-1"></i> Nueva Consulta
-            </a>
+            <?php if (tienePermiso('add_consultation') && tienePermiso('add_prescription')): ?>
+                <a href="consultas.php?id_paciente=<?= (int)$paciente_actual['id_paciente'] ?>" class="btn btn-primary btn-sm rounded-pill px-3">
+                    <i class="bi bi-plus-lg me-1"></i> Nueva Consulta
+                </a>
+            <?php endif; ?>
         </header>
-        <div class="table-responsive">
+        <div class="table-responsive" style="max-height: 360px; overflow-y: auto;">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light small">
+                <thead class="table-light small sticky-top" style="z-index: 2;">
                     <tr>
                         <th>Fecha</th>
                         <th>Signos Vitales</th>
@@ -164,7 +162,16 @@ $historial_consultas      = $datos_historial['historial_consultas'] ?? [];
                                 </td>
                                 <td class="small"><?= htmlspecialchars($cons['diagnostico']) ?></td>
                                 <td class="text-end">
-                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#modalHistorial<?= (int)$cons['id_consulta'] ?>">
+                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill"
+                                        data-bs-toggle="modal" data-bs-target="#modalHistorial"
+                                        data-id="<?= (int)$cons['id_consulta'] ?>"
+                                        data-receta="<?= (int)$cons['id_receta'] ?>"
+                                        data-temp="<?= htmlspecialchars($cons['temperatura']) ?>"
+                                        data-spo2="<?= (int)$cons['saturacion_oxigeno'] ?>"
+                                        data-fr="<?= (int)$cons['frecuencia_respiratoria'] ?>"
+                                        data-pulso="<?= (int)$cons['pulso_cardiaco'] ?>"
+                                        data-diagnostico="<?= htmlspecialchars($cons['diagnostico']) ?>"
+                                        data-detalles='<?= htmlspecialchars(json_encode($cons['detalles'] ?? [], JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>'>
                                         <i class="bi bi-eye"></i> Ver detalle
                                     </button>
                                 </td>
@@ -176,53 +183,40 @@ $historial_consultas      = $datos_historial['historial_consultas'] ?? [];
         </div>
     </section>
 
-    <!-- Modales de detalle -->
-    <?php foreach ($historial_consultas as $cons): ?>
-        <div class="modal fade" id="modalHistorial<?= (int)$cons['id_consulta'] ?>" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <article class="modal-content border-0 shadow rounded-4">
-                    <header class="modal-header border-0 pb-0">
-                        <h5 class="modal-title fw-bold">Consulta #<?= (int)$cons['id_consulta'] ?> &bull; Receta #<?= (int)$cons['id_receta'] ?></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </header>
-                    <div class="modal-body p-4">
-                        <div class="row g-2 mb-3 small">
-                            <div class="col-3"><strong>Temperatura:</strong> <?= htmlspecialchars($cons['temperatura']) ?> °C</div>
-                            <div class="col-3"><strong>SpO₂:</strong> <?= (int)$cons['saturacion_oxigeno'] ?>%</div>
-                            <div class="col-3"><strong>Frec. Resp.:</strong> <?= (int)$cons['frecuencia_respiratoria'] ?> rpm</div>
-                            <div class="col-3"><strong>Pulso:</strong> <?= (int)$cons['pulso_cardiaco'] ?> lpm</div>
-                        </div>
-                        <p class="p-3 rounded-3 bg-light mb-3 small">
-                            <strong>Diagnóstico:</strong> <?= htmlspecialchars($cons['diagnostico']) ?>
-                        </p>
-                        <h6 class="fw-bold small mb-2">Receta Médica</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered mb-0 small">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Medicamento</th>
-                                        <th>Dosis</th>
-                                        <th>Frecuencia</th>
-                                        <th>Duración</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($cons['detalles'] ?? [] as $det): ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($det['medicamento']) ?></td>
-                                            <td><?= htmlspecialchars($det['dosis']) ?></td>
-                                            <td><?= htmlspecialchars($det['frecuencia']) ?></td>
-                                            <td><?= htmlspecialchars($det['duracion']) ?></td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
+    <!-- Modal único reutilizable de detalle de consulta y receta -->
+    <div class="modal fade" id="modalHistorial" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <article class="modal-content border-0 shadow rounded-4">
+                <header class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modalHistorialTitulo"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </header>
+                <div class="modal-body p-4">
+                    <div class="row g-2 mb-3 small">
+                        <div class="col-3"><strong>Temperatura:</strong> <span id="histTemp"></span> °C</div>
+                        <div class="col-3"><strong>SpO₂:</strong> <span id="histSpo2"></span>%</div>
+                        <div class="col-3"><strong>Frec. Resp.:</strong> <span id="histFr"></span> rpm</div>
+                        <div class="col-3"><strong>Pulso:</strong> <span id="histPulso"></span> lpm</div>
                     </div>
-                </article>
-            </div>
+                    <p class="p-3 rounded-3 bg-light mb-3 small" id="modalHistorialDiagnostico"></p>
+                    <h6 class="fw-bold small mb-2">Receta Médica</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Medicamento</th>
+                                    <th>Dosis</th>
+                                    <th>Frecuencia</th>
+                                    <th>Duración</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalHistorialDetalles"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </article>
         </div>
-    <?php endforeach; ?>
+    </div>
 <?php else: ?>
     <div class="alert alert-info rounded-4">No hay pacientes registrados para consultar su historial.</div>
 <?php endif; ?>

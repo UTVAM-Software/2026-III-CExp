@@ -19,9 +19,7 @@ class consulta extends Modelo
                   WHERE c.estado IN ('programada', 'confirmada')
                   ORDER BY c.fecha ASC";
 
-        $stmt = $this->ejecutar($query);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+        return $this->obtenerTodos($query);
     }
 
     public function obtenerCitaPorId($id_cita)
@@ -30,18 +28,17 @@ class consulta extends Modelo
                   FROM cita
                   WHERE id_cita = ?
                   LIMIT 1";
-        $stmt = $this->ejecutar($query, 'i', [(int)$id_cita]);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_assoc() : null;
+        return $this->obtenerUno($query, 'i', [(int)$id_cita]);
     }
 
     public function registrarConsultaConReceta($datos, $medicamentos = [])
     {
-        $this->conn->begin_transaction();
-
-        try {
-            $queryReceta = "INSERT INTO receta (diagnostico, fecha) VALUES (?, ?)";
-            $this->ejecutar($queryReceta, 'ss', [$datos['diagnostico'], $datos['fecha']]);
+        return $this->transaccion(function () use ($datos, $medicamentos) {
+            $this->ejecutar(
+                "INSERT INTO receta (diagnostico, fecha) VALUES (?, ?)",
+                'ss',
+                [$datos['diagnostico'], $datos['fecha']]
+            );
             $id_receta = (int)$this->conn->insert_id;
 
             $stmtDetalle = $this->conn->prepare(
@@ -84,63 +81,38 @@ class consulta extends Modelo
                 $this->ejecutar("UPDATE cita SET estado = 'concluida' WHERE id_cita = ?", 'i', [$id_cita]);
             }
 
-            $this->conn->commit();
             return $id_consulta;
-        } catch (Throwable $e) {
-            $this->conn->rollback();
-            throw $e;
-        }
+        });
     }
 
     public function obtenerConsultas($id_paciente = 0, $limite = 15)
     {
         $id_paciente = (int)$id_paciente;
         $limite      = (int)$limite;
+        $where       = $id_paciente > 0 ? 'WHERE c.id_paciente = ?' : '';
+        $types       = $id_paciente > 0 ? 'ii' : 'i';
+        $params      = $id_paciente > 0 ? [$id_paciente, $limite] : [$limite];
 
-        if ($id_paciente > 0) {
-            $query = "SELECT
-                        c.id_consulta,
-                        c.id_paciente,
-                        c.id_receta,
-                        c.id_cita,
-                        c.fecha,
-                        c.temperatura,
-                        c.saturacion_oxigeno,
-                        c.frecuencia_respiratoria,
-                        c.pulso_cardiaco,
-                        r.diagnostico,
-                        CONCAT(p.nombre, ' ', p.apellido_paterno) AS paciente_nombre
-                      FROM {$this->tabla} c
-                      INNER JOIN paciente p ON c.id_paciente = p.id_paciente
-                      INNER JOIN receta r ON c.id_receta = r.id_receta
-                      WHERE c.id_paciente = ?
-                      ORDER BY c.fecha DESC
-                      LIMIT ?";
-            $stmt = $this->ejecutar($query, 'ii', [$id_paciente, $limite]);
-        } else {
-            $query = "SELECT
-                        c.id_consulta,
-                        c.id_paciente,
-                        c.id_receta,
-                        c.id_cita,
-                        c.fecha,
-                        c.temperatura,
-                        c.saturacion_oxigeno,
-                        c.frecuencia_respiratoria,
-                        c.pulso_cardiaco,
-                        r.diagnostico,
-                        CONCAT(p.nombre, ' ', p.apellido_paterno) AS paciente_nombre
-                      FROM {$this->tabla} c
-                      INNER JOIN paciente p ON c.id_paciente = p.id_paciente
-                      INNER JOIN receta r ON c.id_receta = r.id_receta
-                      ORDER BY c.fecha DESC
-                      LIMIT ?";
-            $stmt = $this->ejecutar($query, 'i', [$limite]);
-        }
+        $query = "SELECT
+                    c.id_consulta,
+                    c.id_paciente,
+                    c.id_receta,
+                    c.id_cita,
+                    c.fecha,
+                    c.temperatura,
+                    c.saturacion_oxigeno,
+                    c.frecuencia_respiratoria,
+                    c.pulso_cardiaco,
+                    r.diagnostico,
+                    CONCAT(p.nombre, ' ', p.apellido_paterno) AS paciente_nombre
+                FROM {$this->tabla} c
+                INNER JOIN paciente p ON c.id_paciente = p.id_paciente
+                INNER JOIN receta r ON c.id_receta = r.id_receta
+                {$where}
+                ORDER BY c.fecha DESC
+                LIMIT ?";
 
-        $resultado = $stmt->get_result();
-        $consultas = $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
-
+        $consultas = $this->obtenerTodos($query, $types, $params);
         foreach ($consultas as &$cons) {
             $cons['detalles'] = $this->obtenerDetallesReceta((int)$cons['id_receta']);
         }
@@ -151,11 +123,9 @@ class consulta extends Modelo
     public function obtenerDetallesReceta($id_receta)
     {
         $query = "SELECT id_detalle, medicamento, dosis, duracion, frecuencia
-                  FROM receta_detalle
-                  WHERE id_receta = ?
-                  ORDER BY id_detalle ASC";
-        $stmt = $this->ejecutar($query, 'i', [(int)$id_receta]);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+                FROM receta_detalle
+                WHERE id_receta = ?
+                ORDER BY id_detalle ASC";
+        return $this->obtenerTodos($query, 'i', [(int)$id_receta]);
     }
 }

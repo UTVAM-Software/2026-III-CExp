@@ -5,6 +5,12 @@ class cita extends Modelo
 {
     protected $tabla = 'cita';
     protected $pk = 'id_cita';
+//funcion generica para los metodos Obtener()
+    private function consultarTodos($query, $types = '', $params = [])
+    {
+        $resultado = $this->ejecutar($query, $types, $params)->get_result();
+        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+    }
 
     public function obtenerCitas()
     {
@@ -23,9 +29,7 @@ class cita extends Modelo
                 INNER JOIN medico m ON p.id_medico = m.id_medico
                 ORDER BY c.fecha ASC";
 
-        $stmt = $this->ejecutar($query);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+        return $this->consultarTodos($query);
     }
 
     public function obtenerCitasPorMedicoYFecha($id_medico, $fecha)
@@ -38,13 +42,11 @@ class cita extends Modelo
                 FROM {$this->tabla} c
                 INNER JOIN paciente p ON c.id_paciente = p.id_paciente
                 WHERE p.id_medico = ?
-                  AND DATE(c.fecha) = ?
-                  AND c.estado <> 'cancelada'
+                AND DATE(c.fecha) = ?
+                AND c.estado <> 'cancelada'
                 ORDER BY c.fecha ASC";
 
-        $stmt = $this->ejecutar($query, 'is', [(int)$id_medico, $fecha]);
-        $resultado = $stmt->get_result();
-        $filas = $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+        $filas = $this->consultarTodos($query, 'is', [(int) $id_medico, $fecha]);
 
         $citas_por_hora = [];
         foreach ($filas as $fila) {
@@ -66,9 +68,7 @@ class cita extends Modelo
                 FROM medico
                 ORDER BY nombre ASC";
 
-        $stmt = $this->ejecutar($query);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+        return $this->consultarTodos($query);
     }
 
     public function obtenerPacientes()
@@ -81,22 +81,20 @@ class cita extends Modelo
                 FROM paciente
                 ORDER BY nombre ASC";
 
-        $stmt = $this->ejecutar($query);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+        return $this->consultarTodos($query);
     }
 
     public function crearCita($id_paciente, $fecha, $estado)
     {
         $query = "INSERT INTO {$this->tabla} (id_paciente, fecha, estado) VALUES (?, ?, ?)";
-        $this->ejecutar($query, 'iss', [(int)$id_paciente, $fecha, $estado]);
-        return (int)$this->conn->insert_id;
+        $this->ejecutar($query, 'iss', [(int) $id_paciente, $fecha, $estado]);
+        return (int) $this->conn->insert_id;
     }
 
     public function actualizarCita($id_cita, $id_paciente, $fecha, $estado)
     {
         $query = "UPDATE {$this->tabla} SET id_paciente = ?, fecha = ?, estado = ? WHERE {$this->pk} = ?";
-        $this->ejecutar($query, 'issi', [(int)$id_paciente, $fecha, $estado, (int)$id_cita]);
+        $this->ejecutar($query, 'issi', [(int) $id_paciente, $fecha, $estado, (int) $id_cita]);
         return true;
     }
 }

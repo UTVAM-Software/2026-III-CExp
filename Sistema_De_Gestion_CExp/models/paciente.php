@@ -6,6 +6,23 @@ class paciente extends Modelo
     protected $tabla = 'paciente';
     protected $pk = 'id_paciente';
 
+    private function consulta_base_con_medico($extraSelect = '')
+    {
+        return "SELECT
+                    p.id_paciente,
+                    p.id_medico,
+                    p.nombre,
+                    p.apellido_paterno,
+                    COALESCE(p.apellido_materno, '') AS apellido_materno,
+                    p.fecha_nacimiento,
+                    COALESCE(p.alergia, '') AS alergia,
+                    COALESCE(p.contacto, '') AS contacto,
+                    CONCAT(m.nombre, ' ', m.apellido_paterno) AS medico_nombre"
+            . ($extraSelect !== '' ? ",\n                    {$extraSelect}" : '') . "
+                FROM {$this->tabla} p
+                INNER JOIN medico m ON p.id_medico = m.id_medico";
+    }
+
     public function listarConFiltros($buscar = '', $id_medico = 0, $alergia = '')
     {
         $condiciones = [];
@@ -34,89 +51,48 @@ class paciente extends Modelo
         }
 
         $where = !empty($condiciones) ? 'WHERE ' . implode(' AND ', $condiciones) : '';
+        $query = $this->consulta_base_con_medico("COALESCE(MAX(a.notas), '') AS antecedentes") . "
+                LEFT JOIN antecedentes a ON p.id_paciente = a.id_paciente
+                {$where}
+                GROUP BY p.id_paciente, p.id_medico, p.nombre, p.apellido_paterno, p.apellido_materno,
+                p.fecha_nacimiento, p.alergia, p.contacto, m.nombre, m.apellido_paterno
+                ORDER BY p.id_paciente ASC";
 
-        $query = "SELECT
-                    p.id_paciente,
-                    p.id_medico,
-                    p.nombre,
-                    p.apellido_paterno,
-                    COALESCE(p.apellido_materno, '') AS apellido_materno,
-                    p.fecha_nacimiento,
-                    COALESCE(p.alergia, '') AS alergia,
-                    COALESCE(p.contacto, '') AS contacto,
-                    CONCAT(m.nombre, ' ', m.apellido_paterno) AS medico_nombre,
-                    COALESCE(MAX(a.notas), '') AS antecedentes
-                  FROM {$this->tabla} p
-                  INNER JOIN medico m ON p.id_medico = m.id_medico
-                  LEFT JOIN antecedentes a ON p.id_paciente = a.id_paciente
-                  {$where}
-                  GROUP BY p.id_paciente, p.id_medico, p.nombre, p.apellido_paterno, p.apellido_materno,
-                           p.fecha_nacimiento, p.alergia, p.contacto, m.nombre, m.apellido_paterno
-                  ORDER BY p.id_paciente ASC";
-
-        $stmt = $this->ejecutar($query, $types, $params);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+        return $this->obtenerTodos($query, $types, $params);
     }
 
     public function obtenerMedicos()
     {
-        $query = "SELECT id_medico, CONCAT(nombre, ' ', apellido_paterno) AS nombre_completo
-                  FROM medico
-                  ORDER BY nombre ASC";
-        $stmt = $this->ejecutar($query);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+        return $this->obtenerTodos("SELECT id_medico, CONCAT(nombre, ' ', apellido_paterno) AS nombre_completo FROM medico ORDER BY nombre ASC");
     }
 
     public function crearPaciente($id_medico, $nombre, $apellido_paterno, $apellido_materno, $fecha_nacimiento, $alergia, $contacto)
     {
         $query = "INSERT INTO {$this->tabla} (id_medico, nombre, apellido_paterno, apellido_materno, fecha_nacimiento, alergia, contacto)
-                  VALUES (?, ?, ?, ?, ?, ?, ?)";
-        $this->ejecutar($query, 'issssss', [
-            (int)$id_medico,
-            $nombre,
-            $apellido_paterno,
-            $apellido_materno,
-            $fecha_nacimiento,
-            $alergia,
-            $contacto,
-        ]);
+                VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $this->ejecutar($query, 'issssss', [(int)$id_medico, $nombre, $apellido_paterno, $apellido_materno, $fecha_nacimiento, $alergia, $contacto]);
         return (int)$this->conn->insert_id;
     }
 
     public function actualizarPaciente($id_paciente, $id_medico, $nombre, $apellido_paterno, $apellido_materno, $fecha_nacimiento, $alergia, $contacto)
     {
         $query = "UPDATE {$this->tabla}
-                  SET id_medico = ?, nombre = ?, apellido_paterno = ?, apellido_materno = ?,
-                      fecha_nacimiento = ?, alergia = ?, contacto = ?
-                  WHERE {$this->pk} = ?";
-        $this->ejecutar($query, 'issssssi', [
-            (int)$id_medico,
-            $nombre,
-            $apellido_paterno,
-            $apellido_materno,
-            $fecha_nacimiento,
-            $alergia,
-            $contacto,
-            (int)$id_paciente,
-        ]);
+                SET id_medico = ?, nombre = ?, apellido_paterno = ?, apellido_materno = ?,
+                fecha_nacimiento = ?, alergia = ?, contacto = ?
+                WHERE {$this->pk} = ?";
+        $this->ejecutar($query, 'issssssi', [(int)$id_medico, $nombre, $apellido_paterno, $apellido_materno, $fecha_nacimiento, $alergia, $contacto, (int)$id_paciente]);
         return true;
     }
 
     public function guardarAntecedentes($id_paciente, $notas)
     {
         $id_paciente = (int)$id_paciente;
-        $queryCheck = "SELECT id_antecedente FROM antecedentes WHERE id_paciente = ? LIMIT 1";
-        $stmt = $this->ejecutar($queryCheck, 'i', [$id_paciente]);
-        $existente = $stmt->get_result()->fetch_assoc();
+        $existente = $this->obtenerUno("SELECT id_antecedente FROM antecedentes WHERE id_paciente = ? LIMIT 1", 'i', [$id_paciente]);
 
         if ($existente) {
-            $queryUpdate = "UPDATE antecedentes SET notas = ? WHERE id_antecedente = ?";
-            $this->ejecutar($queryUpdate, 'si', [$notas, (int)$existente['id_antecedente']]);
+            $this->ejecutar("UPDATE antecedentes SET notas = ? WHERE id_antecedente = ?", 'si', [$notas, (int)$existente['id_antecedente']]);
         } else {
-            $queryInsert = "INSERT INTO antecedentes (id_paciente, notas) VALUES (?, ?)";
-            $this->ejecutar($queryInsert, 'is', [$id_paciente, $notas]);
+            $this->agregarAntecedente($id_paciente, $notas);
         }
 
         return true;
@@ -124,40 +100,19 @@ class paciente extends Modelo
 
     public function agregarAntecedente($id_paciente, $notas)
     {
-        $query = "INSERT INTO antecedentes (id_paciente, notas) VALUES (?, ?)";
-        $this->ejecutar($query, 'is', [(int)$id_paciente, $notas]);
+        $this->ejecutar("INSERT INTO antecedentes (id_paciente, notas) VALUES (?, ?)", 'is', [(int)$id_paciente, $notas]);
         return (int)$this->conn->insert_id;
     }
 
     public function obtenerPorIdConMedico($id_paciente)
     {
-        $query = "SELECT
-                    p.id_paciente,
-                    p.id_medico,
-                    p.nombre,
-                    p.apellido_paterno,
-                    COALESCE(p.apellido_materno, '') AS apellido_materno,
-                    p.fecha_nacimiento,
-                    COALESCE(p.alergia, '') AS alergia,
-                    COALESCE(p.contacto, '') AS contacto,
-                    CONCAT(m.nombre, ' ', m.apellido_paterno) AS medico_nombre
-                  FROM {$this->tabla} p
-                  INNER JOIN medico m ON p.id_medico = m.id_medico
-                  WHERE p.id_paciente = ?
-                  LIMIT 1";
-        $stmt = $this->ejecutar($query, 'i', [(int)$id_paciente]);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_assoc() : null;
+        $query = $this->consulta_base_con_medico() . " WHERE p.id_paciente = ? LIMIT 1";
+        return $this->obtenerUno($query, 'i', [(int)$id_paciente]);
     }
 
     public function obtenerAntecedentes($id_paciente)
     {
-        $query = "SELECT id_antecedente, id_paciente, notas
-                  FROM antecedentes
-                  WHERE id_paciente = ?
-                  ORDER BY id_antecedente DESC";
-        $stmt = $this->ejecutar($query, 'i', [(int)$id_paciente]);
-        $resultado = $stmt->get_result();
-        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+        $query = "SELECT id_antecedente, id_paciente, notas FROM antecedentes WHERE id_paciente = ? ORDER BY id_antecedente DESC";
+        return $this->obtenerTodos($query, 'i', [(int)$id_paciente]);
     }
 }
