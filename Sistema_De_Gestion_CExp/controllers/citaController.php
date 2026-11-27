@@ -3,11 +3,24 @@ require_once __DIR__ . '/../config/auth.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/cita.php';
 
+function crearModeloCita()
+{
+    return new cita((new Database())->getConnection());
+}
+
+function redirigirCita($destino, $tipo = '', $texto = '')
+{
+    if ($tipo !== '' && $texto !== '') {
+        $sep = strpos($destino, '?') !== false ? '&' : '?';
+        $destino .= "{$sep}{$tipo}=" . urlencode($texto);
+    }
+    header("Location: {$destino}");
+    exit();
+}
+
 function obtenerDatosCitas()
 {
-    $database  = new Database();
-    $db        = $database->getConnection();
-    $citaModel = new cita($db);
+    $citaModel = crearModeloCita();
 
     $citas_bd  = $citaModel->obtenerCitas();
     $medicos   = $citaModel->obtenerMedicos();
@@ -38,9 +51,7 @@ function obtenerDatosCitas()
 
 function obtenerDatosAgenda($id_medico = 0, $fecha = '')
 {
-    $database  = new Database();
-    $db        = $database->getConnection();
-    $citaModel = new cita($db);
+    $citaModel = crearModeloCita();
 
     $medicos_lista   = $citaModel->obtenerMedicos();
     $pacientes_lista = $citaModel->obtenerPacientes();
@@ -68,10 +79,7 @@ function obtenerDatosAgenda($id_medico = 0, $fecha = '')
 }
 
 if (basename($_SERVER['PHP_SELF']) === 'citaController.php') {
-    $database  = new Database();
-    $db        = $database->getConnection();
-    $citaModel = new cita($db);
-
+    $citaModel       = crearModeloCita();
     $estados_validos = ['programada', 'confirmada', 'concluida', 'cancelada'];
 
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -82,52 +90,42 @@ if (basename($_SERVER['PHP_SELF']) === 'citaController.php') {
             $id_cita = (int)($_POST['id'] ?? 0);
             if ($id_cita > 0) {
                 $citaModel->delete($id_cita);
-                header("Location: ../views/citas.php?mensaje=" . urlencode("Cita eliminada correctamente."));
-            } else {
-                header("Location: ../views/citas.php");
+                redirigirCita('../views/citas.php', 'mensaje', 'Cita eliminada correctamente.');
             }
-            exit();
+            redirigirCita('../views/citas.php');
         }
 
         $id_cita     = (int)($_POST['id_cita'] ?? 0);
         $id_paciente = (int)($_POST['id_paciente'] ?? 0);
         $fecha_raw   = trim($_POST['fecha'] ?? '');
         $fecha       = str_replace('T', ' ', $fecha_raw);
-        $estado      = $_POST['estado'] ?? 'programada';
+        $estado      = in_array($_POST['estado'] ?? '', $estados_validos, true) ? $_POST['estado'] : 'programada';
         $origen      = ($_POST['origen'] ?? '') === 'agenda' ? 'agenda' : 'citas';
 
-        if (!in_array($estado, $estados_validos, true)) {
-            $estado = 'programada';
-        }
-
-        $destinoBase = $origen === 'agenda' ? '../views/agenda.php' : '../views/citas.php';
-        $extraQuery  = '';
+        $destinoBase = '../views/citas.php';
         if ($origen === 'agenda') {
             $id_med_filtro = (int)($_POST['id_medico_filtro'] ?? 0);
-            $fecha_filtro  = $fecha_raw !== '' ? date('Y-m-d', strtotime($fecha)) : date('Y-m-d');
-            $extraQuery    = 'id_medico=' . $id_med_filtro . '&fecha=' . urlencode($fecha_filtro) . '&';
+            $ts_filtro     = strtotime($fecha);
+            $fecha_filtro  = ($fecha_raw !== '' && $ts_filtro !== false) ? date('Y-m-d', $ts_filtro) : date('Y-m-d');
+            $destinoBase   = '../views/agenda.php?id_medico=' . $id_med_filtro . '&fecha=' . urlencode($fecha_filtro);
         }
 
         if ($id_paciente <= 0 || $fecha_raw === '' || strtotime($fecha) === false) {
-            header("Location: {$destinoBase}?{$extraQuery}error=" . urlencode("Debes seleccionar un paciente y una fecha válida."));
-            exit();
+            redirigirCita($destinoBase, 'error', 'Debes seleccionar un paciente y una fecha válida.');
         }
 
         try {
             if ($id_cita === 0) {
                 $citaModel->crearCita($id_paciente, $fecha, $estado);
-                header("Location: {$destinoBase}?{$extraQuery}mensaje=" . urlencode("Cita agendada correctamente."));
-            } else {
-                $citaModel->actualizarCita($id_cita, $id_paciente, $fecha, $estado);
-                header("Location: {$destinoBase}?{$extraQuery}mensaje=" . urlencode("Cita actualizada correctamente."));
+                redirigirCita($destinoBase, 'mensaje', 'Cita agendada correctamente.');
             }
+            $citaModel->actualizarCita($id_cita, $id_paciente, $fecha, $estado);
+            redirigirCita($destinoBase, 'mensaje', 'Cita actualizada correctamente.');
         } catch (mysqli_sql_exception $e) {
-            header("Location: {$destinoBase}?{$extraQuery}error=" . urlencode("No se pudo guardar la cita."));
+            redirigirCita($destinoBase, 'error', 'No se pudo guardar la cita.');
         }
-        exit();
     }
 
-    header("Location: ../views/citas.php");
-    exit();
+    redirigirCita('../views/citas.php');
 }
 ?>
