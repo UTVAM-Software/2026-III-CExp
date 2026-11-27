@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Si no ha iniciado sesión, redirigir al login
+// Si no ha iniciado sesión, redirigir al log
 if (!isset($_SESSION['id_usuario'])) {
     header("Location: ../views/login.php");
     exit();
