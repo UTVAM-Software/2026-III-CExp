@@ -68,11 +68,11 @@ if (basename($_SERVER['PHP_SELF']) === 'usuarioController.php') {
                     header("Location: ../views/configuracion.php?mensaje=" . urlencode("Usuario actualizado correctamente."));
                 }
             } elseif ($tipo === 'asignar_permisos') {
-                $id_usuario = (int)($_POST['id_usuario'] ?? 0);
+                $id_grupo = (int)($_POST['id_grupo'] ?? 0);
                 $permisos   = $_POST['permisos'] ?? [];
-                $permisoModel->sincronizarPermisosUsuario($id_usuario, is_array($permisos) ? $permisos : []);
+                $permisoModel->sincronizarPermisosGrupo($id_grupo, is_array($permisos) ? $permisos : []);
                 header("Location: ../views/configuracion.php?mensaje=" . urlencode("Permisos actualizados correctamente."));
-            } elseif ($tipo === 'rol') {
+            } elseif ($tipo === 'rol') { // en teoria el rol es lo mismo que el grupo...
                 $id_grupo = (int)($_POST['id_grupo'] ?? 0);
                 $nombre   = trim($_POST['nombre'] ?? '');
 

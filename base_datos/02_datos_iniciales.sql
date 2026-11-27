@@ -1,5 +1,3 @@
-USE cexp_database;
-
 -- 1. Insertar Grupos (Roles)
 INSERT INTO grupo (id_grupo, nombre) VALUES 
 (1, 'Administrador'),
