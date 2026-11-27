@@ -1,7 +1,6 @@
 <?php
 require_once '../config/auth.php';
 require_once '../controllers/consultaController.php';
-// requerirPermiso('add_consultation');
 
 $titulo_pagina = 'Consultas Médicas - CEx+';
 $pagina_activa = 'consultas';
@@ -82,6 +81,7 @@ $consultas_recientes = $datos_consultas['consultas_recientes'] ?? [];
 <!-- Formulario principal de consulta -->
 <?php if (tienePermiso('add_consultation')): ?>
 <form action="../controllers/consultaController.php" method="POST" class="row g-4">
+    <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
     <input type="hidden" name="accion" value="guardar">
 
     <!-- Selección de paciente, cita y signos vitales -->

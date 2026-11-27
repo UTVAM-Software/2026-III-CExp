@@ -29,6 +29,33 @@ if (basename($_SERVER['PHP_SELF']) === 'usuarioController.php') {
     $permisoModel = new permiso($db);
 
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
+        verificarCsrf();
+
+        if (isset($_POST['accion'])) {
+            $accion = $_POST['accion'];
+            $id     = (int)($_POST['id'] ?? 0);
+            try {
+                if ($accion === 'eliminar' && $id === (int)$_SESSION['id_usuario']) {
+                    header("Location: ../views/configuracion.php?error=" . urlencode("No puedes eliminar tu propia cuenta."));
+                } elseif ($accion === 'eliminar_rol' && $id <= 3) {
+                    header("Location: ../views/configuracion.php?error=" . urlencode("No se pueden eliminar los perfiles base del sistema."));
+                } elseif ($accion === 'eliminar_rol' && $grupoModel->contarUsuarios($id) > 0) {
+                    header("Location: ../views/configuracion.php?error=" . urlencode("No se puede eliminar un perfil que tiene usuarios asignados."));
+                } elseif ($id > 0 && $accion === 'eliminar') {
+                    $usuarioModel->delete($id);
+                    header("Location: ../views/configuracion.php?mensaje=" . urlencode("Usuario eliminado."));
+                } elseif ($id > 0 && $accion === 'eliminar_rol') {
+                    $grupoModel->delete($id);
+                    header("Location: ../views/configuracion.php?mensaje=" . urlencode("Perfil eliminado."));
+                } else {
+                    header("Location: ../views/configuracion.php");
+                }
+            } catch (mysqli_sql_exception $e) {
+                header("Location: ../views/configuracion.php?error=" . urlencode("No se pudo eliminar: el registro tiene datos relacionados."));
+            }
+            exit();
+        }
+
         $tipo = $_POST['tipo_formulario'] ?? 'usuario';
 
         try {
@@ -67,43 +94,27 @@ if (basename($_SERVER['PHP_SELF']) === 'usuarioController.php') {
                     $usuarioModel->sincronizarMedico($id_usuario, $nombre_completo, $id_grupo);
                     header("Location: ../views/configuracion.php?mensaje=" . urlencode("Usuario actualizado correctamente."));
                 }
-            } elseif ($tipo === 'asignar_permisos') {
-                $id_usuario = (int)($_POST['id_usuario'] ?? 0);
-                $permisos   = $_POST['permisos'] ?? [];
-                $permisoModel->sincronizarPermisosUsuario($id_usuario, is_array($permisos) ? $permisos : []);
-                header("Location: ../views/configuracion.php?mensaje=" . urlencode("Permisos actualizados correctamente."));
             } elseif ($tipo === 'rol') {
                 $id_grupo = (int)($_POST['id_grupo'] ?? 0);
                 $nombre   = trim($_POST['nombre'] ?? '');
+                $permisos = isset($_POST['permisos']) && is_array($_POST['permisos']) ? $_POST['permisos'] : [];
 
                 if ($nombre === '') {
-                    header("Location: ../views/configuracion.php?error=" . urlencode("El nombre del rol es obligatorio."));
+                    header("Location: ../views/configuracion.php?error=" . urlencode("El nombre del perfil es obligatorio."));
                     exit();
                 }
 
                 if ($id_grupo === 0) {
-                    $grupoModel->crearGrupo($nombre);
-                    header("Location: ../views/configuracion.php?mensaje=" . urlencode("Rol creado correctamente."));
+                    $nuevo_id = $grupoModel->crearGrupo($nombre);
+                    $permisoModel->sincronizarPermisosGrupo($nuevo_id, $permisos);
+                    header("Location: ../views/configuracion.php?mensaje=" . urlencode("Perfil creado correctamente."));
                 } else {
                     $grupoModel->actualizarGrupo($id_grupo, $nombre);
-                    header("Location: ../views/configuracion.php?mensaje=" . urlencode("Rol actualizado correctamente."));
-                }
-            } elseif ($tipo === 'permiso') {
-                $id_permiso = (int)($_POST['id_permiso'] ?? 0);
-                $nombre     = trim($_POST['nombre'] ?? '');
-                $codename   = trim($_POST['codename'] ?? '');
-
-                if ($nombre === '' || $codename === '') {
-                    header("Location: ../views/configuracion.php?error=" . urlencode("El nombre y codename del permiso son obligatorios."));
-                    exit();
-                }
-
-                if ($id_permiso === 0) {
-                    $permisoModel->crearPermiso($nombre, $codename);
-                    header("Location: ../views/configuracion.php?mensaje=" . urlencode("Permiso creado correctamente."));
-                } else {
-                    $permisoModel->actualizarPermiso($id_permiso, $nombre, $codename);
-                    header("Location: ../views/configuracion.php?mensaje=" . urlencode("Permiso actualizado correctamente."));
+                    $permisoModel->sincronizarPermisosGrupo($id_grupo, $permisos);
+                    if ($id_grupo === (int)($_SESSION['id_grupo'] ?? 0)) {
+                        $_SESSION['permisos'] = $permisoModel->obtenerCodenamesPorUsuario($id_grupo);
+                    }
+                    header("Location: ../views/configuracion.php?mensaje=" . urlencode("Perfil actualizado correctamente."));
                 }
             } else {
                 header("Location: ../views/configuracion.php");
@@ -116,27 +127,6 @@ if (basename($_SERVER['PHP_SELF']) === 'usuarioController.php') {
             }
         }
         exit();
-    }
-
-    if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['accion'])) {
-        $accion = $_GET['accion'];
-        $id     = (int)($_GET['id'] ?? 0);
-
-        if ($id > 0) {
-            if ($accion === 'eliminar') {
-                $usuarioModel->delete($id);
-                header("Location: ../views/configuracion.php?mensaje=" . urlencode("Usuario eliminado."));
-                exit();
-            } elseif ($accion === 'eliminar_rol') {
-                $grupoModel->delete($id);
-                header("Location: ../views/configuracion.php?mensaje=" . urlencode("Rol eliminado."));
-                exit();
-            } elseif ($accion === 'eliminar_permiso') {
-                $permisoModel->delete($id);
-                header("Location: ../views/configuracion.php?mensaje=" . urlencode("Permiso eliminado."));
-                exit();
-            }
-        }
     }
 
     header("Location: ../views/configuracion.php");

@@ -79,6 +79,7 @@ if (basename($_SERVER['PHP_SELF']) === 'consultaController.php') {
     $consultaModel = new consulta($db);
 
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
+        verificarCsrf();
         requerirPermiso('add_consultation', '../views/consultas.php');
         requerirPermiso('add_prescription', '../views/consultas.php');
 

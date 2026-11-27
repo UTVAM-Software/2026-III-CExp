@@ -14,20 +14,6 @@ class permiso extends Modelo
         return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
     }
 
-    public function crearPermiso($nombre, $codename)
-    {
-        $sql = "INSERT INTO {$this->tabla} (nombre, codename) VALUES (?, ?)";
-        $this->ejecutar($sql, 'ss', [trim($nombre), trim($codename)]);
-        return (int)$this->conn->insert_id;
-    }
-
-    public function actualizarPermiso($id_permiso, $nombre, $codename)
-    {
-        $sql = "UPDATE {$this->tabla} SET nombre = ?, codename = ? WHERE {$this->pk} = ?";
-        $this->ejecutar($sql, 'ssi', [trim($nombre), trim($codename), (int)$id_permiso]);
-        return true;
-    }
-
     public function obtenerCodenamesPorUsuario($id_grupo)
     {
         $query = "SELECT p.codename
@@ -40,29 +26,31 @@ class permiso extends Modelo
         return array_column($filas, 'codename');
     }
 
-    public function sincronizarPermisosUsuario($id_usuario, $permisos_ids = [])
+    public function sincronizarPermisosGrupo($id_grupo, $permisos_ids = [])
     {
-        $id_usuario = (int)$id_usuario;
-        if ($id_usuario <= 0) {
+        $id_grupo = (int)$id_grupo;
+        if ($id_grupo <= 0) {
             return false;
         }
 
+        $ids_validos = array_values(array_unique(array_filter(
+            array_map('intval', $permisos_ids),
+            fn($id) => $id > 0
+        )));
+
         $this->conn->begin_transaction();
         try {
-            $this->ejecutar("DELETE FROM tiene WHERE id_grupo = ?", 'i', [$id_usuario]);
+            $this->ejecutar("DELETE FROM tiene WHERE id_grupo = ?", 'i', [$id_grupo]);
 
-            if (!empty($permisos_ids)) {
-                $stmtInsert = $this->conn->prepare("INSERT INTO tiene (id_usuario, id_permiso) VALUES (?, ?)");
+            if (!empty($ids_validos)) {
+                $stmtInsert = $this->conn->prepare("INSERT INTO tiene (id_grupo, id_permiso) VALUES (?, ?)");
                 if (!$stmtInsert) {
                     throw new RuntimeException("Error al preparar inserción de permisos: " . $this->conn->error);
                 }
 
-                foreach ($permisos_ids as $id_permiso) {
-                    $id_permiso = (int)$id_permiso;
-                    if ($id_permiso > 0) {
-                        $stmtInsert->bind_param('ii', $id_usuario, $id_permiso);
-                        $stmtInsert->execute();
-                    }
+                foreach ($ids_validos as $id_permiso) {
+                    $stmtInsert->bind_param('ii', $id_grupo, $id_permiso);
+                    $stmtInsert->execute();
                 }
             }
 

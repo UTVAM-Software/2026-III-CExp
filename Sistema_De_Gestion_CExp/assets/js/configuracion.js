@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputBuscar = document.getElementById('filtroBuscarUsuario');
     const selectRol = document.getElementById('filtroRolUsuario');
     const selectEstado = document.getElementById('filtroEstadoUsuario');
-    const filasUsuarios = document.querySelectorAll('#tablaUsuarios tbody tr');
 
     function filtrarTablaUsuarios() {
         const filasActuales = document.querySelectorAll('#tablaUsuarios tbody tr');
@@ -45,38 +44,23 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('contrasena').required = (idUsuario === '');
     });
 
-    // ASIGNAR PERMISOS A UN USUARIO
-    const modalPermisos = document.getElementById('modalAsignarPermisos');
-    modalPermisos?.addEventListener('show.bs.modal', function (event) {
-        const boton = event.relatedTarget;
-        const idUsuario = boton?.getAttribute('data-id') || '';
-        const nombreUsuario = boton?.getAttribute('data-nombre') || '';
-        const permisosRaw = boton?.getAttribute('data-permisos') || '[]';
-        const permisosActivos = JSON.parse(permisosRaw);
-
-        document.getElementById('permisos_id_usuario').value = idUsuario;
-        document.getElementById('permisos_nombre_usuario').textContent = nombreUsuario;
-
-        document.querySelectorAll('.check-permiso-usuario').forEach(check => {
-            check.checked = permisosActivos.includes(parseInt(check.value, 10));
-        });
-    });
-
-    // CREAR / EDITAR ROL 
+    // CREAR / EDITAR PERFIL Y SUS PERMISOS
     const modalRol = document.getElementById('modalRol');
     modalRol?.addEventListener('show.bs.modal', function (event) {
         const boton = event.relatedTarget;
         document.getElementById('id_grupo_modal').value = boton?.getAttribute('data-id') || '';
         document.getElementById('nombre_grupo').value = boton?.getAttribute('data-nombre') || '';
-    });
 
-    // CREAR / EDITAR PERMISO
-    const modalPermiso = document.getElementById('modalPermiso');
-    modalPermiso?.addEventListener('show.bs.modal', function (event) {
-        const boton = event.relatedTarget;
-        document.getElementById('id_permiso_modal').value = boton?.getAttribute('data-id') || '';
-        document.getElementById('nombre_permiso').value = boton?.getAttribute('data-nombre') || '';
-        document.getElementById('codename_permiso').value = boton?.getAttribute('data-codename') || '';
+        let permisosActivos = [];
+        try {
+            permisosActivos = JSON.parse(boton?.getAttribute('data-permisos') || '[]');
+        } catch {
+            permisosActivos = [];
+        }
+
+        document.querySelectorAll('.check-permiso-rol').forEach(check => {
+            check.checked = permisosActivos.includes(parseInt(check.value, 10));
+        });
     });
 
     //  CONFIRMAR ELIMINACIÓN DE USUARIO
@@ -87,6 +71,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const nombreUsuario = boton?.getAttribute('data-nombre') || '';
 
         document.getElementById('nombreUsuarioEliminar').textContent = nombreUsuario;
-        document.getElementById('btnConfirmarEliminarUsuario').href = `../controllers/usuarioController.php?accion=eliminar&id=${idUsuario}`;
+        document.getElementById('idUsuarioEliminar').value = idUsuario;
     });
 });
