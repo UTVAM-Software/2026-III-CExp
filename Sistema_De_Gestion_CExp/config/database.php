@@ -7,6 +7,7 @@ class Database
     private $db_name = DB_NAME;
     private $username = DB_USER;
     private $password = DB_PASS;
+    private $port = DB_PORT;
     private static $cnn = null;
 
     
@@ -15,7 +16,7 @@ class Database
         if (self::$cnn === null) {
             mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
             try {
-                self::$cnn = new mysqli($this->host, $this->username, $this->password, $this->db_name);
+                self::$cnn = new mysqli($this->host, $this->username, $this->password, $this->db_name, $this->port);
                 self::$cnn->set_charset("utf8mb4");
             } catch (mysqli_sql_exception $e) {
                 die("Error de conexión: " . $e->getMessage());
