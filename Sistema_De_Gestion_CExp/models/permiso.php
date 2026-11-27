@@ -8,7 +8,24 @@ class permiso extends Modelo
 
     public function listarTodos()
     {
-        return $this->obtenerTodos("SELECT id_permiso, nombre, codename FROM {$this->tabla} ORDER BY id_permiso ASC");
+        $sql = "SELECT id_permiso, nombre, codename FROM {$this->tabla} ORDER BY id_permiso ASC";
+        $stmt = $this->ejecutar($sql);
+        $resultado = $stmt->get_result();
+        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+    }
+
+    public function crearPermiso($nombre, $codename)
+    {
+        $sql = "INSERT INTO {$this->tabla} (nombre, codename) VALUES (?, ?)";
+        $this->ejecutar($sql, 'ss', [trim($nombre), trim($codename)]);
+        return (int)$this->conn->insert_id;
+    }
+
+    public function actualizarPermiso($id_permiso, $nombre, $codename)
+    {
+        $sql = "UPDATE {$this->tabla} SET nombre = ?, codename = ? WHERE {$this->pk} = ?";
+        $this->ejecutar($sql, 'ssi', [trim($nombre), trim($codename), (int)$id_permiso]);
+        return true;
     }
 
     public function obtenerCodenamesPorUsuario($id_grupo)
@@ -17,7 +34,9 @@ class permiso extends Modelo
                 FROM {$this->tabla} p
                 INNER JOIN tiene t ON p.id_permiso = t.id_permiso
                 WHERE t.id_grupo = ?";
-        $filas = $this->obtenerTodos($query, 'i', [(int)$id_grupo]);
+        $stmt = $this->ejecutar($query, 'i', [(int)$id_grupo]);
+        $resultado = $stmt->get_result();
+        $filas = $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
         return array_column($filas, 'codename');
     }
 
@@ -28,27 +47,30 @@ class permiso extends Modelo
             return false;
         }
 
-        $ids_validos = array_values(array_unique(array_filter(
-            array_map('intval', $permisos_ids),
-            fn($id) => $id > 0
-        )));
-
-        return $this->transaccion(function () use ($id_grupo, $ids_validos) {
+        $this->conn->begin_transaction();
+        try {
             $this->ejecutar("DELETE FROM tiene WHERE id_grupo = ?", 'i', [$id_grupo]);
 
-            if (!empty($ids_validos)) {
-                $stmt = $this->conn->prepare("INSERT INTO tiene (id_grupo, id_permiso) VALUES (?, ?)");
-                if (!$stmt) {
+            if (!empty($permisos_ids)) {
+                $stmtInsert = $this->conn->prepare("INSERT INTO tiene (id_grupo, id_permiso) VALUES (?, ?)");
+                if (!$stmtInsert) {
                     throw new RuntimeException("Error al preparar inserción de permisos: " . $this->conn->error);
                 }
 
-                foreach ($ids_validos as $id_permiso) {
-                    $stmt->bind_param('ii', $id_grupo, $id_permiso);
-                    $stmt->execute();
+                foreach ($permisos_ids as $id_permiso) {
+                    $id_permiso = (int)$id_permiso;
+                    if ($id_permiso > 0) {
+                        $stmtInsert->bind_param('ii', $id_grupo, $id_permiso);
+                        $stmtInsert->execute();
+                    }
                 }
             }
 
+            $this->conn->commit();
             return true;
-        });
+        } catch (Throwable $e) {
+            $this->conn->rollback();
+            throw $e;
+        }
     }
 }

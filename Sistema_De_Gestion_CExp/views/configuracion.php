@@ -1,19 +1,18 @@
 <?php
 require_once '../config/auth_admin.php';
 require_once '../controllers/usuarioController.php';
-// requerirPermiso('add_consultation');
 
 $titulo_pagina = 'Configuración - Consultorio Médico';
 $pagina_activa = 'configuracion';
+$script_adicional = '../assets/js/configuracion.js';
 
 if (!defined('EN_PLANTILLA_BASE')) {
     $vista = __FILE__;
     require_once '../templatesReutilizables/template.base.php';
     return;
 }
-// var_dump(obtenerDatosConfiguracion());
+
 $datos_config   = obtenerDatosConfiguracion();
-//$roles_lista    = $datos_config['roles_lista'] ?? [];
 $permisos_lista = $datos_config['permisos_lista'] ?? [];
 $grupos_lista = $datos_config['grupos_lista'] ?? [];
 $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
@@ -37,9 +36,9 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
     <header class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <div>
             <h4 class="fw-bold mb-1">
-                <i class="bi bi-gear text-primary me-2"></i>Gestión de Usuarios y Perfiles
+                <i class="bi bi-gear text-primary me-2"></i>Gestión de Usuarios, Perfiles y Permisos
             </h4>
-            <p class="text-muted small mb-0">Administra las cuentas del sistema, perfiles y permisos asignados a cada perfil.</p>
+            <p class="text-muted small mb-0">Administra las cuentas del sistema, sus roles asignados y permisos de acceso.</p>
         </div>
     </header>
 
@@ -52,7 +51,12 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link fw-semibold" id="tab-roles-btn" data-bs-toggle="tab" data-bs-target="#tabRoles" type="button" role="tab" aria-controls="tabRoles" aria-selected="false">
-                <i class="bi bi-shield-lock me-1"></i>2. Perfiles y Roles
+                <i class="bi bi-shield-lock me-1"></i>2. Perfiles / Roles
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-semibold" id="tab-permisos-btn" data-bs-toggle="tab" data-bs-target="#tabPermisos" type="button" role="tab" aria-controls="tabPermisos" aria-selected="false">
+                <i class="bi bi-key me-1"></i>3. Permisos
             </button>
         </li>
     </ul>
@@ -72,8 +76,8 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
 
                 <div class="col-auto">
                     <select id="filtroRolUsuario" class="form-select form-select-sm">
-                        <option value="">Todos los perfiles</option>
-                        <?php foreach ($grupos_lista as $r): ?>
+                        <option value="">Todos los roles</option>
+                        <?php foreach ($permisos_lista as $r): ?>
                             <option value="<?= htmlspecialchars($r['nombre']) ?>"><?= htmlspecialchars($r['nombre']) ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -130,6 +134,16 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
                                     </span>
                                 </td>
                                 <td class="text-end pe-3">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-3 me-1 btn-permisos-usuario"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalAsignarPermisos"
+                                        data-grupo="<?= (int)$u['id_grupo'] ?>"
+                                        data-rol="<?= htmlspecialchars($u['rol_nombre']) ?>"
+                                        data-permisos="<?= htmlspecialchars(json_encode($u['permisos_ids'])) ?>"
+                                        <?= $u['id_grupo'] > 0 ? '' : 'disabled' ?>>
+                                        <i class="bi bi-key"></i> Permisos
+                                    </button>
+
                                     <button type="button" class="btn btn-outline-primary btn-sm rounded-3 me-1 btn-editar-usuario"
                                         data-bs-toggle="modal"
                                         data-bs-target="#modalUsuario"
@@ -162,7 +176,7 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
             <header class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="fw-bold mb-0 text-secondary">Perfiles y Roles registrados</h6>
                 <button type="button" class="btn btn-primary btn-sm fw-semibold px-3 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalRol" id="btnNuevoRol">
-                    <i class="bi bi-plus-lg me-1"></i>Nuevo Perfil
+                    <i class="bi bi-plus-lg me-1"></i>Nuevo Rol
                 </button>
             </header>
 
@@ -173,7 +187,6 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
                             <th scope="col" class="ps-3">ID Grupo</th>
                             <th scope="col">Nombre del Perfil / Rol</th>
                             <th scope="col">Usuarios Asignados</th>
-                            <th scope="col">Permisos Asignados</th>
                             <th scope="col" class="text-end pe-3">Acciones</th>
                         </tr>
                     </thead>
@@ -183,40 +196,70 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
                                 <td class="ps-3 fw-medium text-secondary">#<?= (int)$r['id_grupo'] ?></td>
                                 <td class="fw-semibold"><?= htmlspecialchars($r['nombre']) ?></td>
                                 <td><span class="badge bg-secondary-subtle text-secondary-emphasis"><?= (int)$r['total_usuarios'] ?> usuario(s)</span></td>
-                                <td>
-                                    <?php if (!empty($r['permisos_nombres'])): ?>
-                                        <div class="d-flex flex-wrap gap-1">
-                                            <?php foreach ($r['permisos_nombres'] as $nombre_permiso): ?>
-                                                <span class="badge bg-primary-subtle text-primary-emphasis fw-medium"><?= htmlspecialchars($nombre_permiso) ?></span>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    <?php else: ?>
-                                        <span class="text-muted small">Sin permisos</span>
-                                    <?php endif; ?>
-                                </td>
                                 <td class="text-end pe-3">
                                     <button type="button" class="btn btn-outline-primary btn-sm rounded-3 me-1 btn-editar-rol"
                                         data-bs-toggle="modal"
                                         data-bs-target="#modalRol"
                                         data-id="<?= (int)$r['id_grupo'] ?>"
-                                        data-nombre="<?= htmlspecialchars($r['nombre']) ?>"
-                                        data-permisos="<?= htmlspecialchars(json_encode($r['permisos_ids'])) ?>">
+                                        data-nombre="<?= htmlspecialchars($r['nombre']) ?>">
                                         <i class="bi bi-pencil"></i> Editar
                                     </button>
-                                    <?php if ((int)$r['id_grupo'] > 3 && (int)$r['total_usuarios'] === 0): ?>
-                                        <form method="POST" action="../controllers/usuarioController.php" class="d-inline">
-                                            <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
-                                            <input type="hidden" name="accion" value="eliminar_rol">
-                                            <input type="hidden" name="id" value="<?= (int)$r['id_grupo'] ?>">
-                                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-3" title="Eliminar perfil">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    <?php else: ?>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-3" disabled title="Perfil protegido o con usuarios asignados">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    <?php endif; ?>
+                                    <form method="POST" action="../controllers/usuarioController.php" class="d-inline" onsubmit="return confirm('¿Eliminar este rol?');">
+                                        <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
+                                        <input type="hidden" name="accion" value="eliminar_rol">
+                                        <input type="hidden" name="id" value="<?= (int)$r['id_grupo'] ?>">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-3"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- CATALOGO DE PERMISOS -->
+        <section class="tab-pane fade" id="tabPermisos" role="tabpanel" aria-labelledby="tab-permisos-btn">
+            <header class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0 text-secondary">Catálogo de Permisos del Sistema</h6>
+                <button type="button" class="btn btn-primary btn-sm fw-semibold px-3 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalPermiso" id="btnNuevoPermiso">
+                    <i class="bi bi-plus-lg me-1"></i>Nuevo Permiso
+                </button>
+            </header>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-primary">
+                        <tr>
+                            <th scope="col" class="ps-3">ID Permiso</th>
+                            <th scope="col">Descripción del Permiso (nombre)</th>
+                            <th scope="col">Clave Interna (codename)</th>
+                            <th scope="col" class="text-end pe-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <?php foreach ($permisos_lista as $perm): ?>
+
+                            <tr>
+                                <td class="ps-3 fw-medium text-secondary">#<?= (int)$perm['id_permiso'] ?></td>
+                                <td class="fw-semibold"><?= htmlspecialchars($perm['nombre']) ?></td>
+                                <td><code class="bg-light px-2 py-1 rounded border"><?= htmlspecialchars($perm['codename']) ?></code></td>
+                                <td class="text-end pe-3">
+                                    <button type="button" class="btn btn-outline-primary btn-sm rounded-3 me-1 btn-editar-permiso"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalPermiso"
+                                        data-id="<?= (int)$perm['id_permiso'] ?>"
+                                        data-nombre="<?= htmlspecialchars($perm['nombre']) ?>"
+                                        data-codename="<?= htmlspecialchars($perm['codename']) ?>">
+                                        <i class="bi bi-pencil"></i> Editar
+                                    </button>
+                                    <form method="POST" action="../controllers/usuarioController.php" class="d-inline" onsubmit="return confirm('¿Eliminar este permiso?');">
+                                        <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
+                                        <input type="hidden" name="accion" value="eliminar_permiso">
+                                        <input type="hidden" name="id" value="<?= (int)$perm['id_permiso'] ?>">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-3"><i class="bi bi-trash"></i></button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -293,9 +336,50 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
     </div>
 </div>
 
-<!-- CREAR, EDITAR PERFIL O ROL Y SUS PERMISOS -->
-<div class="modal fade" id="modalRol" tabindex="-1" aria-labelledby="modalRolLabel" aria-hidden="true">
+<!-- ASIGNAR Y REVOCAR PERMISOS A UN ROL -->
+<div class="modal fade" id="modalAsignarPermisos" tabindex="-1" aria-labelledby="modalAsignarPermisosLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content border-0 shadow" action="../controllers/usuarioController.php" method="POST">
+            <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
+            <header class="modal-header bg-primary-subtle border-0">
+                <h5 class="modal-title fw-bold text-primary-emphasis" id="modalAsignarPermisosLabel">
+                    <i class="bi bi-key-fill me-2"></i>Permisos del Rol
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </header>
+
+            <div class="modal-body p-4">
+                <input type="hidden" name="tipo_formulario" value="asignar_permisos">
+                <input type="hidden" name="id_grupo" id="permisos_id_grupo" value="">
+
+                <p class="mb-3 small text-muted">
+                    Permisos del rol <strong class="text-dark" id="permisos_nombre_rol"></strong>. Los cambios aplican a todos los usuarios con este rol y se ven la próxima vez que inicien sesión.
+                </p>
+
+                <div class="list-group">
+                    <?php foreach ($permisos_lista as $perm): ?>
+                        <label class="list-group-item d-flex justify-content-between align-items-center py-2">
+                            <div>
+                                <span class="fw-medium d-block small"><?= htmlspecialchars($perm['nombre']) ?></span>
+                                <code class="text-muted" style="font-size: 0.75rem;"><?= htmlspecialchars($perm['codename']) ?></code>
+                            </div>
+                            <input class="form-check-input ms-2 check-permiso-usuario" type="checkbox" name="permisos[]" value="<?= (int)$perm['id_permiso'] ?>">
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <footer class="modal-footer border-0 pt-0 px-4 pb-4">
+                <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold">Guardar Permisos</button>
+            </footer>
+        </form>
+    </div>
+</div>
+
+<!-- CREAR,EDITAR PERFIL O ROL -->
+<div class="modal fade" id="modalRol" tabindex="-1" aria-labelledby="modalRolLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
         <form class="modal-content border-0 shadow" action="../controllers/usuarioController.php" method="POST">
             <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
             <header class="modal-header bg-primary-subtle border-0">
@@ -309,27 +393,50 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
                 <input type="hidden" name="tipo_formulario" value="rol">
                 <input type="hidden" name="id_grupo" id="id_grupo_modal" value="">
 
-                <div class="mb-3">
-                    <label for="nombre_grupo" class="form-label fw-semibold small">Nombre del Perfil</label>
-                    <input type="text" name="nombre" id="nombre_grupo" class="form-control" maxlength="15" placeholder="Ej. Enfermería" required>
-                </div>
-
-                <div>
-                    <p class="form-label fw-semibold small mb-2">Permisos del sistema</p>
-                    <div class="list-group">
-                        <?php foreach ($permisos_lista as $perm): ?>
-                            <label class="list-group-item d-flex justify-content-between align-items-center py-2">
-                                <span class="fw-medium small"><?= htmlspecialchars($perm['nombre']) ?></span>
-                                <input class="form-check-input ms-2 check-permiso-rol" type="checkbox" name="permisos[]" value="<?= (int)$perm['id_permiso'] ?>">
-                            </label>
-                        <?php endforeach; ?>
-                    </div>
+                <div class="mb-2">
+                    <label for="nombre_grupo" class="form-label fw-semibold small">Nombre del Rol</label>
+                    <input type="text" name="nombre" id="nombre_grupo" class="form-control" maxlength="15" placeholder="Ej. Médico" required>
                 </div>
             </div>
 
             <footer class="modal-footer border-0 pt-0 px-4 pb-4">
                 <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold">Guardar Perfil</button>
+                <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold">Guardar</button>
+            </footer>
+        </form>
+    </div>
+</div>
+
+<!--CREAR Y EDITAR PERMISO -->
+<div class="modal fade" id="modalPermiso" tabindex="-1" aria-labelledby="modalPermisoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content border-0 shadow" action="../controllers/usuarioController.php" method="POST">
+            <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
+            <header class="modal-header bg-primary-subtle border-0">
+                <h5 class="modal-title fw-bold text-primary-emphasis" id="modalPermisoLabel">
+                    <i class="bi bi-key me-2"></i>Crear / Editar Permiso
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </header>
+
+            <div class="modal-body p-4">
+                <input type="hidden" name="tipo_formulario" value="permiso">
+                <input type="hidden" name="id_permiso" id="id_permiso_modal" value="">
+
+                <div class="mb-3">
+                    <label for="nombre_permiso" class="form-label fw-semibold small">Nombre descriptivo del Permiso</label>
+                    <input type="text" name="nombre" id="nombre_permiso" class="form-control" maxlength="60" placeholder="Ej. Gestionar Pacientes" required>
+                </div>
+
+                <div class="mb-2">
+                    <label for="codename_permiso" class="form-label fw-semibold small">Clave interna (codename)</label>
+                    <input type="text" name="codename" id="codename_permiso" class="form-control" maxlength="20" placeholder="Ej. gestionar_pacientes" required>
+                </div>
+            </div>
+
+            <footer class="modal-footer border-0 pt-0 px-4 pb-4">
+                <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold">Guardar Permiso</button>
             </footer>
         </form>
     </div>
