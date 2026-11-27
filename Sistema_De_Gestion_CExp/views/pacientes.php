@@ -146,9 +146,11 @@ $pacientes_lista = $datos_pacientes['pacientes_lista'] ?? [];
                                         <i class="bi bi-pencil"></i> Editar
                                     </button>
                                 <?php endif; ?>
-                                <button type="button" class="btn btn-outline-danger btn-sm rounded-3" data-bs-toggle="modal" data-bs-target="#modalEliminarPaciente<?= $id_p ?>">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                                <?php if (tienePermiso('change_patient')): ?>
+                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-3" data-bs-toggle="modal" data-bs-target="#modalEliminarPaciente<?= $id_p ?>">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -167,6 +169,7 @@ $pacientes_lista = $datos_pacientes['pacientes_lista'] ?? [];
     <div class="modal fade" id="modalEditarPaciente<?= $id_p ?>" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <form class="modal-content border-0 shadow" action="../controllers/pacienteController.php" method="POST">
+                <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
                 <header class="modal-header bg-primary-subtle border-0">
                     <h5 class="modal-title fw-bold text-primary-emphasis">
                         <i class="bi bi-pencil-square me-2"></i>Editar Paciente #<?= $id_p ?>
@@ -232,6 +235,7 @@ $pacientes_lista = $datos_pacientes['pacientes_lista'] ?? [];
     <div class="modal fade" id="modalAntecedentes<?= $id_p ?>" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form class="modal-content border-0 shadow" action="../controllers/pacienteController.php" method="POST">
+                <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
                 <header class="modal-header bg-primary-subtle border-0">
                     <h5 class="modal-title fw-bold text-primary-emphasis">
                         <i class="bi bi-journal-medical me-2"></i>Antecedentes Médicos
@@ -281,9 +285,14 @@ $pacientes_lista = $datos_pacientes['pacientes_lista'] ?? [];
 
                 <footer class="modal-footer border-0 pt-0 px-4 pb-4 justify-content-center">
                     <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <a href="../controllers/pacienteController.php?accion=eliminar&id=<?= $id_p ?>" class="btn btn-danger rounded-3 px-4 fw-semibold">
-                        <i class="bi bi-trash me-1"></i>Sí, eliminar
-                    </a>
+                    <form method="POST" action="../controllers/pacienteController.php" class="d-inline">
+                        <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
+                        <input type="hidden" name="accion" value="eliminar">
+                        <input type="hidden" name="id" value="<?= $id_p ?>">
+                        <button type="submit" class="btn btn-danger rounded-3 px-4 fw-semibold">
+                            <i class="bi bi-trash me-1"></i>Sí, eliminar
+                        </button>
+                    </form>
                 </footer>
             </article>
         </div>
@@ -294,6 +303,7 @@ $pacientes_lista = $datos_pacientes['pacientes_lista'] ?? [];
 <div class="modal fade" id="modalNuevoPaciente" tabindex="-1" aria-labelledby="modalNuevoPacienteLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <form class="modal-content border-0 shadow" action="../controllers/pacienteController.php" method="POST">
+            <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
             <header class="modal-header bg-primary-subtle border-0">
                 <h5 class="modal-title fw-bold text-primary-emphasis" id="modalNuevoPacienteLabel">
                     <i class="bi bi-person-plus-fill me-2"></i>Registrar Nuevo Paciente

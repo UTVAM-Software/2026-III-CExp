@@ -213,14 +213,14 @@ document.addEventListener('DOMContentLoaded', function () {
         modalEliminarEl.addEventListener('show.bs.modal', function (event) {
             const boton = event.relatedTarget;
             const nombrePacienteEl = document.getElementById('nombrePacienteEliminar');
-            const btnConfirmarEl = document.getElementById('btnConfirmarEliminar');
+            const idCitaEl = document.getElementById('idCitaEliminar');
 
             if (boton && boton.dataset.id) {
                 if (nombrePacienteEl) {
                     nombrePacienteEl.textContent = boton.dataset.paciente || '';
                 }
-                if (btnConfirmarEl) {
-                    btnConfirmarEl.href = '../controllers/citaController.php?accion=eliminar&id=' + boton.dataset.id;
+                if (idCitaEl) {
+                    idCitaEl.value = boton.dataset.id;
                 }
             }
         });

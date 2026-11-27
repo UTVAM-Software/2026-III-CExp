@@ -21,6 +21,24 @@ if (basename($_SERVER['PHP_SELF']) === 'pacienteController.php') {
     $pacienteModel = new paciente($db);
 
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
+        verificarCsrf();
+
+        if (($_POST['accion'] ?? '') === 'eliminar') {
+            requerirPermiso('change_patient', '../views/pacientes.php');
+            $id_paciente = (int)($_POST['id'] ?? 0);
+            try {
+                if ($id_paciente > 0) {
+                    $pacienteModel->delete($id_paciente);
+                    header("Location: ../views/pacientes.php?mensaje=" . urlencode("Paciente eliminado correctamente."));
+                } else {
+                    header("Location: ../views/pacientes.php");
+                }
+            } catch (mysqli_sql_exception $e) {
+                header("Location: ../views/pacientes.php?error=" . urlencode("No se puede eliminar: el paciente tiene citas, antecedentes o consultas registradas."));
+            }
+            exit();
+        }
+
         $tipo = $_POST['tipo_formulario'] ?? 'paciente';
 
         try {
@@ -49,6 +67,7 @@ if (basename($_SERVER['PHP_SELF']) === 'pacienteController.php') {
                     header("Location: ../views/pacientes.php?mensaje=" . urlencode("Paciente actualizado correctamente."));
                 }
             } elseif ($tipo === 'antecedentes') {
+                requerirPermiso('change_patient', '../views/pacientes.php');
                 $id_paciente = (int)($_POST['id_paciente'] ?? 0);
                 $notas       = trim($_POST['notas'] ?? '');
                 $origen      = ($_POST['origen'] ?? '') === 'historial' ? 'historial' : 'pacientes';
@@ -74,15 +93,6 @@ if (basename($_SERVER['PHP_SELF']) === 'pacienteController.php') {
             header("Location: ../views/pacientes.php?error=" . urlencode("No se pudo guardar la información del paciente."));
         }
         exit();
-    }
-
-    if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['accion'])) {
-        if ($_GET['accion'] === 'eliminar' && !empty($_GET['id'])) {
-            $id_paciente = (int)$_GET['id'];
-            $pacienteModel->delete($id_paciente);
-            header("Location: ../views/pacientes.php?mensaje=" . urlencode("Paciente eliminado correctamente."));
-            exit();
-        }
     }
 
     header("Location: ../views/pacientes.php");

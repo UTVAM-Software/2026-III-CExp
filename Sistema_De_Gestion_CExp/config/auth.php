@@ -27,4 +27,21 @@ function requerirPermiso($codename, $redirigir = '../views/reportes.php')
         exit();
     }
 }
+
+function csrfToken()
+{
+    if (empty($_SESSION['csrf'])) {
+        $_SESSION['csrf'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf'];
+}
+
+function verificarCsrf()
+{
+    $enviado = $_POST['csrf'] ?? '';
+    if (!is_string($enviado) || !hash_equals($_SESSION['csrf'] ?? '', $enviado)) {
+        http_response_code(403);
+        exit('Solicitud no válida. Recarga la página e inténtalo de nuevo.');
+    }
+}
 ?>

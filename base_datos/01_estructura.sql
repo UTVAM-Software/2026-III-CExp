@@ -1,6 +1,3 @@
-CREATE DATABASE IF NOT EXISTS cexp_database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE cexp_database;
-
 -- Grupos, permisos y usuarios
 CREATE TABLE IF NOT EXISTS grupo(
 	id_grupo INT AUTO_INCREMENT PRIMARY KEY,

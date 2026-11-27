@@ -113,6 +113,7 @@ $historial_consultas      = $datos_historial['historial_consultas'] ?? [];
 
                 <hr class="my-3">
                 <form action="../controllers/pacienteController.php" method="POST">
+                    <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
                     <input type="hidden" name="tipo_formulario" value="antecedentes">
                     <input type="hidden" name="origen" value="historial">
                     <input type="hidden" name="id_paciente" value="<?= (int)$paciente_actual['id_paciente'] ?>">

@@ -140,6 +140,7 @@ $bloques_tarde  = ['15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'
                 </h6>
             </header>
             <form action="../controllers/citaController.php" method="POST">
+                <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
                 <input type="hidden" name="accion" value="crear">
                 <input type="hidden" name="origen" value="agenda">
                 <input type="hidden" name="id_medico_filtro" value="<?= (int)$id_medico_seleccionado ?>">

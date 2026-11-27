@@ -1,7 +1,6 @@
 <?php
 require_once '../config/auth_admin.php';
 require_once '../controllers/usuarioController.php';
-// requerirPermiso('add_consultation');
 
 $titulo_pagina = 'Configuración - Consultorio Médico';
 $pagina_activa = 'configuracion';
@@ -12,9 +11,8 @@ if (!defined('EN_PLANTILLA_BASE')) {
     require_once '../templatesReutilizables/template.base.php';
     return;
 }
-// var_dump(obtenerDatosConfiguracion());
+
 $datos_config   = obtenerDatosConfiguracion();
-//$roles_lista    = $datos_config['roles_lista'] ?? [];
 $permisos_lista = $datos_config['permisos_lista'] ?? [];
 $grupos_lista = $datos_config['grupos_lista'] ?? [];
 $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
@@ -139,9 +137,10 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
                                     <button type="button" class="btn btn-outline-secondary btn-sm rounded-3 me-1 btn-permisos-usuario"
                                         data-bs-toggle="modal"
                                         data-bs-target="#modalAsignarPermisos"
-                                        data-id="<?= (int)$u['id_usuario'] ?>"
-                                        data-nombre="<?= htmlspecialchars($u['nombre_completo']) ?>"
-                                        data-permisos="<?= htmlspecialchars(json_encode($u['permisos_ids'])) ?>">
+                                        data-grupo="<?= (int)$u['id_grupo'] ?>"
+                                        data-rol="<?= htmlspecialchars($u['rol_nombre']) ?>"
+                                        data-permisos="<?= htmlspecialchars(json_encode($u['permisos_ids'])) ?>"
+                                        <?= $u['id_grupo'] > 0 ? '' : 'disabled' ?>>
                                         <i class="bi bi-key"></i> Permisos
                                     </button>
 
@@ -205,9 +204,12 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
                                         data-nombre="<?= htmlspecialchars($r['nombre']) ?>">
                                         <i class="bi bi-pencil"></i> Editar
                                     </button>
-                                    <a href="../controllers/usuarioController.php?accion=eliminar_rol&id=<?= (int)$r['id_grupo'] ?>" class="btn btn-outline-danger btn-sm rounded-3">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
+                                    <form method="POST" action="../controllers/usuarioController.php" class="d-inline" onsubmit="return confirm('¿Eliminar este rol?');">
+                                        <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
+                                        <input type="hidden" name="accion" value="eliminar_rol">
+                                        <input type="hidden" name="id" value="<?= (int)$r['id_grupo'] ?>">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-3"><i class="bi bi-trash"></i></button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -252,9 +254,12 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
                                         data-codename="<?= htmlspecialchars($perm['codename']) ?>">
                                         <i class="bi bi-pencil"></i> Editar
                                     </button>
-                                    <a href="../controllers/usuarioController.php?accion=eliminar_permiso&id=<?= (int)$perm['id_permiso'] ?>" class="btn btn-outline-danger btn-sm rounded-3">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
+                                    <form method="POST" action="../controllers/usuarioController.php" class="d-inline" onsubmit="return confirm('¿Eliminar este permiso?');">
+                                        <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
+                                        <input type="hidden" name="accion" value="eliminar_permiso">
+                                        <input type="hidden" name="id" value="<?= (int)$perm['id_permiso'] ?>">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-3"><i class="bi bi-trash"></i></button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -270,6 +275,7 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
 <div class="modal fade" id="modalUsuario" tabindex="-1" aria-labelledby="modalUsuarioLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form class="modal-content border-0 shadow" action="../controllers/usuarioController.php" method="POST">
+            <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
             <header class="modal-header bg-primary-subtle border-0">
                 <h5 class="modal-title fw-bold text-primary-emphasis" id="modalUsuarioLabel">
                     <i class="bi bi-person-gear me-2"></i>Crear / Editar Usuario
@@ -330,23 +336,24 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
     </div>
 </div>
 
-<!-- ASIGNAR Y REVOCAR PERMISOS A UN USUARIO -->
+<!-- ASIGNAR Y REVOCAR PERMISOS A UN ROL -->
 <div class="modal fade" id="modalAsignarPermisos" tabindex="-1" aria-labelledby="modalAsignarPermisosLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form class="modal-content border-0 shadow" action="../controllers/usuarioController.php" method="POST">
+            <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
             <header class="modal-header bg-primary-subtle border-0">
                 <h5 class="modal-title fw-bold text-primary-emphasis" id="modalAsignarPermisosLabel">
-                    <i class="bi bi-key-fill me-2"></i>Permisos del Usuario
+                    <i class="bi bi-key-fill me-2"></i>Permisos del Rol
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </header>
 
             <div class="modal-body p-4">
                 <input type="hidden" name="tipo_formulario" value="asignar_permisos">
-                <input type="hidden" name="id_usuario" id="permisos_id_usuario" value="">
+                <input type="hidden" name="id_grupo" id="permisos_id_grupo" value="">
 
                 <p class="mb-3 small text-muted">
-                    Selecciona o desmarca los permisos para <strong class="text-dark" id="permisos_nombre_usuario"></strong>:
+                    Permisos del rol <strong class="text-dark" id="permisos_nombre_rol"></strong>. Los cambios aplican a todos los usuarios con este rol y se ven la próxima vez que inicien sesión.
                 </p>
 
                 <div class="list-group">
@@ -374,6 +381,7 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
 <div class="modal fade" id="modalRol" tabindex="-1" aria-labelledby="modalRolLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <form class="modal-content border-0 shadow" action="../controllers/usuarioController.php" method="POST">
+            <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
             <header class="modal-header bg-primary-subtle border-0">
                 <h5 class="modal-title fw-bold text-primary-emphasis" id="modalRolLabel">
                     <i class="bi bi-shield-plus me-2"></i>Perfil / Rol
@@ -403,6 +411,7 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
 <div class="modal fade" id="modalPermiso" tabindex="-1" aria-labelledby="modalPermisoLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form class="modal-content border-0 shadow" action="../controllers/usuarioController.php" method="POST">
+            <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
             <header class="modal-header bg-primary-subtle border-0">
                 <h5 class="modal-title fw-bold text-primary-emphasis" id="modalPermisoLabel">
                     <i class="bi bi-key me-2"></i>Crear / Editar Permiso
@@ -453,9 +462,14 @@ $usuarios_lista = $datos_config['usuarios_lista'] ?? [];
 
             <footer class="modal-footer border-0 pt-0 px-4 pb-4 justify-content-center">
                 <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Cancelar</button>
-                <a href="#" id="btnConfirmarEliminarUsuario" class="btn btn-danger rounded-3 px-4 fw-semibold">
-                    <i class="bi bi-trash me-1"></i>Sí, eliminar
-                </a>
+                <form method="POST" action="../controllers/usuarioController.php" class="d-inline">
+                    <input type="hidden" name="csrf" value="<?= csrfToken() ?>">
+                    <input type="hidden" name="accion" value="eliminar">
+                    <input type="hidden" name="id" id="idUsuarioEliminar" value="">
+                    <button type="submit" class="btn btn-danger rounded-3 px-4 fw-semibold">
+                        <i class="bi bi-trash me-1"></i>Sí, eliminar
+                    </button>
+                </form>
             </footer>
         </article>
     </div>
